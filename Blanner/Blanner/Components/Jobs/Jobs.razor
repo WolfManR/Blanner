@@ -1,0 +1,125 @@
+﻿@page "/jobs"
+
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject UserManager<User> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@attribute [Authorize]
+@rendermode InteractiveServerNotPrerendered
+
+<PageTitle>Jobs</PageTitle>
+
+<div class="row">
+	<input class="form-control col" type="date" value="@FilterForm.Start.ToString("O")" @onchange="OnFilterValueStartChanged"/>
+	<input class="form-control col" type="date" value="@FilterForm.End.ToString("O")" @onchange="OnFilterValueEndChanged" />
+</div>
+
+<div class="mt-2">
+	@foreach (var item in _data) {
+		<div class="card mb-3">
+			<div class="card-header">
+				<div class="row">
+					<h3 class="col-3">@item.Contractor?.Name</h3>
+					<h4 class="col-6">@item.Name</h4>
+					<span class="col-1">@item.TotalTime.ToString(UserSettings.TimeFormatterValue())</span>
+					<div class="col-2">
+						<div class="input-group">
+							<div class="input-group-text">
+								<input class="form-check-input" type="checkbox" value="@item.Marked" />
+							</div>
+							<input class="form-control" type="text" value="@item.MarkComment" />
+						</div>
+					</div>
+				</div>
+			</div>
+
+			@if(item.Comment is {Length: > 0 }) {
+				<div class="card-body">
+					<p>@item.Comment</p>
+				</div>
+			}
+
+			<div class="card-footer">
+				<div>
+					<span>@item.Start.ToString(UserSettings.TimeFormatterValue())</span> - <span>@item.End.ToString(UserSettings.TimeFormatterValue())</span>
+				</div>
+			</div>
+		</div>
+	}
+</div>
+
+@code {
+	private HubConnection? _hubConnection;
+
+	private string _userId = "";
+	private List<JobHeaderData> _data = new();
+	public UserSettings? UserSettings { get; set; }
+
+	[SupplyParameterFromForm]
+	private JobsFilterForm FilterForm { get; set; } = JobsFilterForm.Create();
+
+	protected override async Task OnInitializedAsync() {
+		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		_userId = UserManager.GetUserId(state.User) ?? "";
+
+		await LoadJobs();
+
+		_hubConnection = new HubConnectionBuilder().WithUrl(NavManager.GoalsHubUri()).Build();
+
+		_hubConnection.On<string>(nameof(IGoalsHub.JobsBuilded), OnJobsBuilded);
+
+		await _hubConnection.StartAsync();
+	}
+
+	private async Task LoadJobs() {
+		var url = NavManager.JobsApiUri();
+
+		var response = await Http.PostAsJsonAsync(url, new JobsListData(_userId, FilterForm.Start, FilterForm.End));
+		if (response.IsSuccessStatusCode) {
+			_data = (await response.Content.ReadFromJsonAsync<List<JobHeaderData>>()) ?? [];
+		}
+	}
+
+	private async Task OnFilterValueStartChanged(ChangeEventArgs e) {
+		FilterForm.Start = e.Value<DateTime>(DateTime.MinValue);
+		await LoadJobs();
+	}
+	
+	private async Task OnFilterValueEndChanged(ChangeEventArgs e) {
+		FilterForm.End = e.Value<DateTime>(DateTime.MaxValue);
+		await LoadJobs();
+	}
+
+	// private async Task CreateGoal(EditContext editContext) {
+	// 	if (_userId.NullOrEmpty()) return;
+	// 	GoalCreationData request = new(NewGoal.Name, _userId);
+
+	// 	var url = NavManager.ToAbsoluteUri("api/goals/save").AbsoluteUri;
+
+	// 	var response = await Http.PostAsJsonAsync(url, request);
+	// }
+
+	private async Task OnJobsBuilded(string userId) {
+		if (userId != _userId) return;
+		await LoadJobs();
+
+		await InvokeAsync(StateHasChanged);
+	}
+
+	class JobsFilterForm {
+		public DateTimeOffset Start { get; set; }
+		public DateTimeOffset End { get; set; }
+
+		public static JobsFilterForm Create() {
+			var today = DateTimeOffset.Now;
+
+			JobsFilterForm form = new()
+				{
+					Start = new DateTimeOffset(today.Date),
+					End = new DateTimeOffset(today.Date.AddDays(1))
+				};
+			return form;
+		}
+	}
+}

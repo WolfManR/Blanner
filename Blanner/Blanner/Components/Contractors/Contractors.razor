@@ -1,0 +1,100 @@
+﻿@page "/contractors"
+
+@inject HttpClient Http
+@inject NavigationManager NavManager
+
+@rendermode InteractiveServer
+
+<h3>Contractors</h3>
+
+<div>
+	<EditForm FormName="ContractorCreateForm" Model="ContractorCreateModel" OnValidSubmit="CreateContractor">
+		<label>Name</label>
+		<InputText @bind-Value="ContractorCreateModel.Name"/>
+
+		<button>Add</button>
+	</EditForm>
+</div>
+
+<div class="d-flex">
+	@foreach (var item in _contractors) {
+		<div class="card m-2">
+			@if (!item.IsOnEdit)
+			{
+				<div class="card-header" @onclick="() => item.IsOnEdit = true">@item.Name</div>
+			}
+			@if (item.IsOnEdit)
+			{
+				<div class="card-header">
+					<EditForm FormName="ContractorEditForm" Model="item" OnValidSubmit="() => Save(item)">
+                    <label>Name</label>
+                    <InputText @bind-Value="item.Name"/>
+                </EditForm>
+                </div>
+			}
+            <div class="card-footer">
+                <button @onclick="() => Delete(item)">Delete</button>
+            </div>
+        </div>
+	}
+</div>
+
+@code {
+	private List<ContractorVM> _contractors = new();
+	private NameFormModel ContractorCreateModel { get; set; } = new();
+
+	protected override async Task OnInitializedAsync() {
+		var uri = NavManager.ToAbsoluteUri("api/contractors").AbsoluteUri;
+		var response = await Http.GetFromJsonAsync<List<Contractor>>(uri);
+		_contractors = (response ?? new()).Select(x=>new ContractorVM().Set(x)).ToList();
+	}
+
+	private async Task CreateContractor() {
+		var uri = NavManager.ToAbsoluteUri("api/contractors").AbsoluteUri;
+		var response = await Http.PostAsJsonAsync(uri, new ContractorCreateRequest(ContractorCreateModel.Name, DateTimeOffset.Now));
+		response.EnsureSuccessStatusCode();
+		var data = await response.Content.ReadFromJsonAsync<Contractor>();
+		if (data is null) return;
+
+		_contractors.Insert(0, new ContractorVM().Set(data));
+	}
+
+	private async Task Save(ContractorVM contractor) {
+		var uri = NavManager.ToAbsoluteUri("api/contractors").AbsoluteUri;
+		var response = await Http.PutAsJsonAsync(uri, new ContractorEditRequest(contractor.Id, contractor.Name, DateTimeOffset.Now));
+		response.EnsureSuccessStatusCode();
+		var data = await response.Content.ReadFromJsonAsync<Contractor>();
+		if (data is null) return;
+
+		contractor.Set(data);
+		contractor.IsOnEdit = false;
+	}
+
+	private async Task Delete(ContractorVM contractor) {
+		var uri = NavManager.ToAbsoluteUri($"api/contractors/{contractor.Id}").AbsoluteUri;
+		var response = await Http.DeleteAsync(uri);
+		response.EnsureSuccessStatusCode();
+		var data = await response.Content.ReadFromJsonAsync<Contractor>();
+		if (data is null) return;
+		_contractors.Remove(contractor);
+		StateHasChanged();
+	}
+
+	class ContractorVM {
+		public int Id { get; private set; }
+		public string Name { get; set; } = string.Empty;
+		public bool IsOnEdit { get; set; }
+
+		public ContractorVM Set(Contractor data) {
+			Id = data.Id;
+			Name = data.Name;
+
+			return this;
+		}
+
+		public void Clear() {
+			Id = 0;
+			Name = string.Empty;
+		}
+	}
+}

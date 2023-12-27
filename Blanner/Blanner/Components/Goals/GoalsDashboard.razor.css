@@ -1,0 +1,20 @@
+﻿.area{
+    height:100%;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 3fr 2fr;
+    grid-template-rows: 1fr 2fr;
+    grid-template-areas:
+        "area-active area-selected"
+        "area-goals area-selected";
+}
+
+.area-active{
+    grid-area: area-active;
+}
+.area-goals {
+    grid-area: area-goals;
+}
+.area-selected {
+    grid-area: area-selected;
+}
