@@ -29,6 +29,7 @@ public static class GoalsEndpoints {
         activeGoalsGroup.MapGet("/{goalId}", ActiveGoalsEndpointsBehaviors.Goal);
         activeGoalsGroup.MapPost("/start", ActiveGoalsEndpointsBehaviors.StartTimer);
         activeGoalsGroup.MapPost("/stop", ActiveGoalsEndpointsBehaviors.StopTimer);
+        activeGoalsGroup.MapPost("/delete", ActiveGoalsEndpointsBehaviors.DeleteGoal);
         activeGoalsGroup.MapPost("/complete", ActiveGoalsEndpointsBehaviors.CompleteJob);
         activeGoalsGroup.MapPost("/save/header", ActiveGoalsEndpointsBehaviors.SaveHeaderChanges);
         activeGoalsGroup.MapPost("/time/new", ActiveGoalsEndpointsBehaviors.AddTimer);

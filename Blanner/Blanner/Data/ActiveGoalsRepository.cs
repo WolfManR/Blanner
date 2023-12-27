@@ -77,6 +77,7 @@ namespace Blanner.Data {
 
 			var tasks = goal.Tasks.ExceptBy(goal.Goal.Tasks.Select(x => x.Id), x => x.Id).ToList();
 			_dbContext.RemoveRange(tasks);
+			_dbContext.Remove(goal);
 
 			await _dbContext.SaveChangesAsync();
 
