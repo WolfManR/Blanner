@@ -114,8 +114,8 @@
 			return;
 		}
 		_goals = data.Select(x=> new GoalVM(x)).ToList();
-		var groups = _goals.GroupBy(x => x.Contractor, x => x);
-		_goalsGroups = groups.ToDictionary(x => new Value<Contractor, int>(x.Key), x => x.ToList());
+		var groups = _goals.GroupBy(x => new Value<Contractor, int>(x.Contractor));
+		_goalsGroups = groups.ToDictionary(x => x.Key, x => x.ToList());
 	}
 
 	private async Task CreateGoal(EditContext editContext) {
