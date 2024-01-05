@@ -9,6 +9,7 @@
 
 <h3>Active goals</h3>
 
+<CascadingValue Value="UserSettings">
 <div class="grid" tabindex="-1">
 	<table class="table">
 		<thead>
@@ -35,26 +36,14 @@
 					</tr>
 
 					@foreach (var item in value) {
-						<tr class="item" @onclick="() => SelectGoal(item)">
-							<td>@item.TotalElapsedTime.ToString(UserSettings.TimeFormatterValue())</td>
-							<td>@item.Name</td>
-							<td>@item.TimerTime.ToString(UserSettings.DetailedTimeFormatterValue())</td>
-							<td class="d-flex justify-content-between">
-								@if (item.Tick) {
-									<button class="btn btn-danger" @onclick="() => StopGoal(item)" @onclick:stopPropagation="true"><i class="bi bi-stop-circle"></i></button>
-								}
-								else {
-									<button class="btn btn-success" @onclick="() => ActivateGoal(item)" @onclick:stopPropagation="true"><i class="bi bi-play-fill"></i></button>
-								}
-								<button class="btn btn-danger" @onclick="() => DeleteGoal(key, item)" @onclick:stopPropagation="true"><i class="bi bi-trash3"></i></button>
-							</td>
-						</tr>
+						<ActiveGoalRow Goal="item" OnSelect="SelectGoal" OnDelete="(g) => DeleteGoal(key, g)" OnActivateTimer="ActivateGoal" OnStopTimer="StopGoal"/>
 					}
 				}
 			}
 		</tbody>
 	</table>
 </div>
+</CascadingValue>
 
 @code {
 	private HubConnection? _hubConnection;
@@ -74,8 +63,6 @@
 		await LoadGoals();
 
 		_hubConnection = new HubConnectionBuilder().WithUrl(NavManager.GoalsHubUri()).Build();
-
-		_hubConnection.On<int, int, string>(nameof(IGoalsHub.Tick), OnTimerTick);
 
 		_hubConnection.On<int, string, ActiveGoalHeaderData>(nameof(IGoalsHub.ActiveGoalHeaderEdited), OnActiveGoalHeaderEdited);
 		_hubConnection.On<int, string>(nameof(IGoalsHub.GoalDeleted), OnGoalDeleted);
@@ -165,17 +152,6 @@
 		var url = NavManager.ToAbsoluteUri("api/jobs/build").AbsoluteUri;
 
 		var response = await Http.PostAsJsonAsync(url, request);
-	}
-
-
-	private async Task OnTimerTick(int goalId, int timerId, string userId) {
-		if (_userId != userId) return;
-		ActiveGoalVM? goal = _goals.Find(x => x.ActiveTimerId == timerId);
-		if (goal is null) return;
-
-		goal.TickTime();
-
-		await InvokeAsync(StateHasChanged);
 	}
 
 	private async Task OnActiveGoalHeaderEdited(int goalId, string userId, ActiveGoalHeaderData data) {

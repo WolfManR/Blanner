@@ -117,10 +117,10 @@ internal static class HostExtensions {
 	}
 
 	public static void RegisterScheduledJobs(this IServiceCollection services) {
-		services.AddTransient<TimeNotifier>();
+		
 	}
 	public static void ConfigureScheduledJobs(IScheduler scheduler) {
-		scheduler.Schedule<TimeNotifier>().EverySecond().PreventOverlapping(nameof(TimeNotifier));
+		
 	}
 
 	public static void RegisterEvents(this IServiceCollection services) {
