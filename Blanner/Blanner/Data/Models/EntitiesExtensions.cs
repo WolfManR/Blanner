@@ -14,4 +14,12 @@ public static class EntitiesExtensions {
 	public static string DetailedTimeFormatterValue(this UserSettings? instance) {
 		return instance?.DetailedTimeFormatter ?? UserSettings.DefaultDetailedTimeFormatter;
 	}
+
+	public static string DateTimeFormatterValue(this UserSettings? instance) {
+		return instance?.DateTimeFormatter ?? UserSettings.DefaultDateTimeFormatter;
+	}
+
+	public static string DetailedDateTimeFormatterValue(this UserSettings? instance) {
+		return instance?.DetailedDateTimeFormatter ?? UserSettings.DefaultDetailedDateTimeFormatter;
+	}
 }
