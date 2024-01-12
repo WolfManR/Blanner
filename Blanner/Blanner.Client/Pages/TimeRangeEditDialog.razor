@@ -1,5 +1,68 @@
-﻿<h3>TimeRangeEditDialog</h3>
+﻿@using Blanner.Client.Models
+
+@inject IJSRuntime JS
+
+
+<dialog @ref="_dialogRef" class="time-dialog w-25" id="GoalEditorDialog" @onclose="CloseDialog" @oncancel="CloseDialog">
+    <EditForm Model="this">
+        <div class="d-flex justify-content-between mb-2">
+            <InputDate @bind-Value="StartDate" DisplayName="Start" />
+            <span class="ml-4 mr-4">-</span>
+            <InputDate @bind-Value="EndDate" DisplayName="End" />
+        </div>
+        <div class="d-flex">
+        <div class="d-flex flex-row justify-content-start">
+            <InputNumber class="w-50" @bind-Value="StartHours" DisplayName="Hours" />
+            <InputNumber class="w-50" @bind-Value="StartMinutes" DisplayName="Minutes" />
+        </div>
+        <div class="w-25"></div>
+        <div class="d-flex flex-row justify-content-end">
+            <InputNumber class="w-50" @bind-Value="EndHours" DisplayName="Hours" />
+            <InputNumber class="w-50" @bind-Value="EndMinutes" DisplayName="Minutes" />
+        </div>
+        </div>
+        <form class="mt-4" method="dialog">
+            <button class="btn btn-primary">Ok</button>
+            <button class="btn btn-close"></button>
+        </form>
+    </EditForm>
+</dialog>
 
 @code {
+    private ElementReference? _dialogRef;
+    [Parameter]
+    public EventCallback<TimeRange> DialogCompletion { get; set; }
 
+    private DateTime StartDate { get; set; }
+    private int StartHours { get; set; }
+    private int StartMinutes { get; set; }
+    private DateTime EndDate { get; set; }
+    private int EndHours { get; set; }
+    private int EndMinutes { get; set; }
+
+
+    public async ValueTask OpenDialog(TimeRange? range = default) {
+        if (!_dialogRef.HasValue) return;
+
+        if(range is not null) {
+            StartDate = range.Start.Date;
+            StartHours = range.Start.Hour;
+            StartMinutes = range.Start.Minute;
+            EndDate = range.End.Date;
+            EndHours = range.End.Hour;
+            EndMinutes = range.End.Minute;
+        }
+
+        await JS.InvokeVoidAsync("ShowDialog", _dialogRef.Value);
+    }
+
+
+    private async Task CloseDialog() {
+        if (!_dialogRef.HasValue) return;
+        if (DialogCompletion.HasDelegate) 
+            await DialogCompletion.InvokeAsync(new() {
+                Start = DateTime.SpecifyKind(StartDate.AddHours(StartHours).AddMinutes(StartMinutes), DateTimeKind.Local),
+                End = DateTime.SpecifyKind(EndDate.AddHours(EndHours).AddMinutes(EndMinutes), DateTimeKind.Local)
+            });
+    }
 }

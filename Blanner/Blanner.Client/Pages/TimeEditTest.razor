@@ -1,6 +1,52 @@
 ﻿@page "/time"
+@using Blanner.Client.Models
+
+@rendermode InteractiveWebAssembly
+
 <h3>TimeEditTest</h3>
 
-@code {
+<div>
+	<div class="d-flex">
+		<button @onclick="() => Times.Add(new())" >Add</button>
+	</div>
 
+	@foreach (var range in Times) {
+		<div class="row">
+			<div class="col-4">@range.Start.ToString("G")</div>
+			<div class="col-auto ml-4 mr-4">-</div>
+			<div class="col-4">@range.End.ToString("G")</div>
+			<div class="col-3">
+				<button @onclick="() => OpenEditDialog(range)">Edit</button>
+				<button @onclick="() => Times.Remove(range)">Delete</button>
+			</div>
+		</div>
+	}
+</div>
+
+<TimeRangeEditDialog @ref="_dialogRef" DialogCompletion="UpdateRange">
+
+</TimeRangeEditDialog>
+
+@code {
+	private TimeRangeEditDialog? _dialogRef;
+	private TimeRange? rangeOnEdit;
+	public List<TimeRange> Times { get; set; } = [];
+
+	private async Task OpenEditDialog(TimeRange range) {
+		if (_dialogRef is null) return;
+		await _dialogRef.OpenDialog(range);
+		rangeOnEdit = range;
+	}
+
+	public void UpdateRange(TimeRange range) {
+		if (rangeOnEdit is null)
+		{
+			Times.Add(range);
+			return;
+		}
+
+		rangeOnEdit.Start = range.Start;
+		rangeOnEdit.End = range.End;
+		rangeOnEdit = null;
+	}
 }
