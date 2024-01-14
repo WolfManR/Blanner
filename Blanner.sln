@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blanner.Desktop", "Blanner.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blanner.Desktop.Core", "Blanner.Desktop.Core\Blanner.Desktop.Core.csproj", "{A32A65AD-46BD-4E9F-90A9-AB96DEB6C4A2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Blanner.Components", "Blanner.Components\Blanner.Components.csproj", "{A886FD16-E65B-4256-AF01-8F8C38B2E2AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{A32A65AD-46BD-4E9F-90A9-AB96DEB6C4A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A32A65AD-46BD-4E9F-90A9-AB96DEB6C4A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A32A65AD-46BD-4E9F-90A9-AB96DEB6C4A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A886FD16-E65B-4256-AF01-8F8C38B2E2AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A886FD16-E65B-4256-AF01-8F8C38B2E2AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A886FD16-E65B-4256-AF01-8F8C38B2E2AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A886FD16-E65B-4256-AF01-8F8C38B2E2AF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
