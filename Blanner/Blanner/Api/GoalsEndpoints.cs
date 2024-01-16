@@ -32,7 +32,7 @@ public static class GoalsEndpoints {
         activeGoalsGroup.MapPost("/delete", ActiveGoalsEndpointsBehaviors.DeleteGoal);
         activeGoalsGroup.MapPost("/complete", ActiveGoalsEndpointsBehaviors.CompleteJob);
         activeGoalsGroup.MapPost("/save/header", ActiveGoalsEndpointsBehaviors.SaveHeaderChanges);
-        activeGoalsGroup.MapPost("/time/new", ActiveGoalsEndpointsBehaviors.AddTimer);
+        activeGoalsGroup.MapPost("/time/add", ActiveGoalsEndpointsBehaviors.AddTimer);
         activeGoalsGroup.MapPost("/time/edit", ActiveGoalsEndpointsBehaviors.EditTimer);
         activeGoalsGroup.MapPost("/time/delete", ActiveGoalsEndpointsBehaviors.DeleteTimer);
     }
@@ -211,7 +211,7 @@ public static class ActiveGoalsEndpointsBehaviors {
 		[FromServices] IHubContext<GoalsHub, IGoalsHub> hubContext) {
 		ActiveGoalTime? goalTIme = await goalsRepository.DeleteTimer(request.TimeId);
 		if (goalTIme is null) return TypedResults.NotFound();
-		await hubContext.Clients.All.ActiveGoalTimerDeleted(request.GoalId, request.TimeId, request.UserId, goalsRepository.TotalTime(request.GoalId));
+		await hubContext.Clients.All.ActiveGoalTimerDeleted(request.GoalId, request.TimeId, request.UserId, await goalsRepository.TotalTime(request.GoalId));
 		return TypedResults.Ok();
 	}
 

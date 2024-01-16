@@ -31,8 +31,10 @@ namespace Blanner.Data {
 				.ToListAsync();
 		}
 
-		public TimeSpan TotalTime(int goalId) {
-			return _dbContext.ActiveGoalsTime.Include(x => x.ActiveGoal).Where(x => x.ActiveGoal.Id == goalId).Select(x => x.End - x.Start).Aggregate((cum, t) => cum + t);
+		public async Task<TimeSpan> TotalTime(int goalId) {
+			var goalTime = await _dbContext.ActiveGoalsTime.Include(x => x.ActiveGoal).Where(x => x.ActiveGoal.Id == goalId).Select(x => x.End - x.Start).ToListAsync();
+
+            return goalTime?.Count > 0 ? goalTime.Aggregate((cum, t) => cum + t) : TimeSpan.Zero;
 		}
 
 		public async Task<ActiveGoal> Update(int goalId, string name, int? contractorId, string comment) {
