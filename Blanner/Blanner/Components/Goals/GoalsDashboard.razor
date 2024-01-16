@@ -1,4 +1,5 @@
 ﻿@page "/goals-dashboard"
+@using Blanner.Components.Models
 
 @inject HttpClient Http
 @inject NavigationManager NavManager
@@ -114,21 +115,7 @@
                 </div>
             }
 
-            <dialog @ref="_dialogRef" class="time-dialog" id="GoalEditorDialog" @onclose="CloseDialog" @oncancel="CloseDialog">
-                <EditForm Model="ActiveGoalTimeEditFormModel">
-                    <InputDate @bind-Value="ActiveGoalTimeEditFormModel.Start" DisplayName="Start" />
-                    <InputDate @bind-Value="ActiveGoalTimeEditFormModel.End" DisplayName="End" />
-                    <div class="d-flex flex-row">
-                        <InputNumber @bind-Value="ActiveGoalTimeEditFormModel.Hours" DisplayName="Hours" />
-                        <InputNumber @bind-Value="ActiveGoalTimeEditFormModel.Minutes" DisplayName="Minutes" />
-                    </div>
-
-                    <form method="dialog">
-                        <button class="btn btn-primary">Ok</button>
-                        <button class="btn btn-close"></button>
-                    </form>
-                </EditForm>
-            </dialog>
+            <TimeRangeEditDialog @ref="_dialogRef" DialogCompletion="DialogClosed" />
         }
     </div>
 </div>
@@ -136,8 +123,8 @@
 @code {
     private HubConnection? _hubConnection;
 
-    private ElementReference? _dialogRef;
-    private Func<ValueTask>? _dialogCompletion;
+    private TimeRangeEditDialog? _dialogRef;
+    private Func<TimeRange, ValueTask>? _dialogCompletion;
 
     private string _userId = "";
     private bool _showTimes;
@@ -244,45 +231,49 @@
         await OpenDialog(EditTimeActiveGoalCompletion);
     }
 
-    private async ValueTask OpenDialog(Func<ValueTask> dialogCompletion) {
-        if (!_dialogRef.HasValue) return;
+    private async ValueTask OpenDialog(Func<TimeRange, ValueTask> dialogCompletion) {
+        if (_dialogRef is null) return;
 
         _dialogCompletion = dialogCompletion;
-        await JS.InvokeVoidAsync("ShowDialog", _dialogRef.Value);
+        await _dialogRef.OpenDialog(new () {
+            Start = ActiveGoalTimeEditFormModel.Start,
+            End = ActiveGoalTimeEditFormModel.End
+        });
     }
 
-    private async Task CloseDialog() {
-        if (_dialogCompletion is not null) await _dialogCompletion.Invoke();
+    private async Task DialogClosed(TimeRange range) {
+        // TODO: handle cancellation
+        if(_dialogCompletion is not null) await _dialogCompletion.Invoke(range);
         _dialogCompletion = null;
     }
 
-    private async ValueTask AddTimeActiveGoalCompletion() {
+    private async ValueTask AddTimeActiveGoalCompletion(TimeRange timeRange) {
         if (ActiveGoalEditFormModel.IsEmpty) return;
-        var goalId = ActiveGoalEditFormModel.Id;
-        GoalTimeCreationData request = new(
-            goalId,
-            _userId,
-            ActiveGoalTimeEditFormModel.Start,
-            ActiveGoalTimeEditFormModel.End >= ActiveGoalTimeEditFormModel.Start ? ActiveGoalTimeEditFormModel.End : null,
-            TimeSpan.FromHours(ActiveGoalTimeEditFormModel.Hours).Add(TimeSpan.FromMinutes(ActiveGoalTimeEditFormModel.Minutes)));
 
-        var url = NavManager.ToAbsoluteUri($"api/goals/active/save/time/new").AbsoluteUri;
+        GoalTimeCreationData request = new(
+            ActiveGoalEditFormModel.Id,
+            _userId,
+            timeRange.Start,
+            timeRange.End,
+            timeRange.End - timeRange.Start);
+
+        var url = NavManager.ToAbsoluteUri($"api/goals/active/time/add").AbsoluteUri;
 
         var response = await Http.PostAsJsonAsync(url, request);
     }
 
-    private async ValueTask EditTimeActiveGoalCompletion() {
+    private async ValueTask EditTimeActiveGoalCompletion(TimeRange timeRange) {
         if (ActiveGoalEditFormModel.IsEmpty) return;
-        var goalId = ActiveGoalEditFormModel.Id;
+
         GoalTimeEditData request = new(
-            goalId,
+            ActiveGoalEditFormModel.Id,
             ActiveGoalTimeEditFormModel.Id,
             _userId,
-            ActiveGoalTimeEditFormModel.Start,
-            ActiveGoalTimeEditFormModel.End >= ActiveGoalTimeEditFormModel.Start ? ActiveGoalTimeEditFormModel.End : null,
-            TimeSpan.FromHours(ActiveGoalTimeEditFormModel.Hours).Add(TimeSpan.FromMinutes(ActiveGoalTimeEditFormModel.Minutes)));
+            timeRange.Start,
+            timeRange.End,
+            timeRange.End - timeRange.Start);
 
-        var url = NavManager.ToAbsoluteUri($"api/goals/active/save/time/edit").AbsoluteUri;
+        var url = NavManager.ToAbsoluteUri($"api/goals/active/time/edit").AbsoluteUri;
 
         var response = await Http.PostAsJsonAsync(url, request);
     }
@@ -406,6 +397,7 @@
 
         goalTime.Start = timerData.Start;
         goalTime.End = timerData.End;
+        goalTime.Time = timerData.End - timerData.Start;
 
         ActiveGoalEditFormModel.GoalTime.Sort();
 
@@ -508,18 +500,20 @@
         public int Id { get; set; }
         public DateTimeOffset Start { get; set; }
         public DateTimeOffset End { get; set; }
-        public int Hours { get; set; }
-        public int Minutes { get; set; }
 
         public static ActiveGoalTimeEditForm Create(ActiveGoalTimeData? data = default) {
-            if (data is null) return new();
+            if (data is null) {
+				var rangeValue = DateTimeOffset.Now;
+				return new() {
+						Start = rangeValue,
+						End = rangeValue
+					};
+			}
 
             return new() {
                     Id = data.Id,
                     Start = data.Start,
-                    End = data.End,
-                    Hours = data.Time.Hours,
-                    Minutes = data.Time.Minutes
+                    End = data.End
                 };
         }
     }

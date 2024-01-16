@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Blanner.Components\Blanner.Components.csproj" />
     <ProjectReference Include="..\Blanner.Client\Blanner.Client.csproj" />
     <PackageReference Include="Coravel" Version="5.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.0" />
