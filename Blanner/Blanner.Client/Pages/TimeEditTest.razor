@@ -40,7 +40,12 @@
 		rangeOnEdit = range;
 	}
 
-	public void UpdateRange(TimeRange range) {
+	public void UpdateRange(TimeRange? range) {
+		if (range is null)
+		{
+			rangeOnEdit = null;
+			return;
+		}
 		if (rangeOnEdit is null)
 		{
 			Times.Add(range);

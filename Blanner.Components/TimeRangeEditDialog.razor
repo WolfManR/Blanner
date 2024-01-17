@@ -23,7 +23,7 @@
         </div>
         </div>
         <form class="mt-4" method="dialog">
-            <button class="btn btn-primary">Ok</button>
+            <button class="btn btn-primary" @onclick="SubmitResult">Ok</button>
             <button class="btn btn-close"></button>
         </form>
     </EditForm>
@@ -32,7 +32,7 @@
 @code {
     private ElementReference? _dialogRef;
     [Parameter]
-    public EventCallback<TimeRange> DialogCompletion { get; set; }
+    public EventCallback<TimeRange?> DialogCompletion { get; set; }
 
     private DateTime StartDate { get; set; }
     private int StartHours { get; set; }
@@ -40,6 +40,8 @@
     private DateTime EndDate { get; set; }
     private int EndHours { get; set; }
     private int EndMinutes { get; set; }
+
+    private bool _valueSubmited;
 
 
     public async ValueTask OpenDialog(TimeRange? range = default) {
@@ -58,12 +60,20 @@
     }
 
 
-    private async Task CloseDialog() {
+    private async Task SubmitResult(MouseEventArgs e) {
+        _valueSubmited = true;
         if (!_dialogRef.HasValue) return;
         if (DialogCompletion.HasDelegate) 
             await DialogCompletion.InvokeAsync(new() {
                 Start = DateTime.SpecifyKind(StartDate.AddHours(StartHours).AddMinutes(StartMinutes), DateTimeKind.Local),
                 End = DateTime.SpecifyKind(EndDate.AddHours(EndHours).AddMinutes(EndMinutes), DateTimeKind.Local)
             });
+    }
+    private async Task CloseDialog(EventArgs e) {
+        if (_valueSubmited) return;
+        _valueSubmited = false;
+        if (!_dialogRef.HasValue) return;
+        if (DialogCompletion.HasDelegate) 
+            await DialogCompletion.InvokeAsync();
     }
 }
