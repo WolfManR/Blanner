@@ -36,7 +36,7 @@
 
 			@if(item.Comment is {Length: > 0 }) {
 				<div class="card-body">
-					<p>@item.Comment</p>
+					<p>@((MarkupString)@item.Comment.Replace("\n", "<br/>"))</p>
 				</div>
 			}
 
