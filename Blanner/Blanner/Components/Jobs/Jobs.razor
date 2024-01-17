@@ -10,43 +10,54 @@
 
 <PageTitle>Jobs</PageTitle>
 
-<div class="row">
-	<input class="form-control col" type="date" value="@FilterForm.Start.ToString("O")" @onchange="OnFilterValueStartChanged"/>
-	<input class="form-control col" type="date" value="@FilterForm.End.ToString("O")" @onchange="OnFilterValueEndChanged" />
-</div>
+<div>
+	<div class="row sticky-top w-50 justify-content-start">
+		<input class="form-control col" type="date" value="@FilterForm.Start.ToString("O")" @onchange="OnFilterValueStartChanged" />
+		<span class="col-auto"></span>
+		<input class="form-control col" type="date" value="@FilterForm.End.ToString("O")" @onchange="OnFilterValueEndChanged" />
+	</div>
 
-<div class="mt-2">
-	@foreach (var item in _data) {
-		<div class="card mb-3">
-			<div class="card-header">
-				<div class="row">
-					<h3 class="col-3">@item.Contractor?.Name</h3>
-					<h4 class="col-6">@item.Name</h4>
-					<span class="col-1">@item.TotalTime.ToString(UserSettings.TimeFormatterValue())</span>
-					<div class="col-2">
-						<div class="input-group">
-							<div class="input-group-text">
-								<input class="form-check-input" type="checkbox" value="@item.Marked" />
-							</div>
-							<input class="form-control" type="text" value="@item.MarkComment" />
-						</div>
+	<div class="mt-2">
+		@foreach (var group in _data.GroupBy(x => x.Start.Date).OrderByDescending(x => x.Key)) {
+			<div class="card mb-3">
+				<div class="card-header">
+					<div class="row">
+						<span class="col-6 fw-bold">@group.Key.ToString("D")</span>
+						<span class="col-1 fw-bold">@group.Select(x => x.TotalTime).Aggregate((cum, t) => cum + t).ToString(UserSettings.TimeFormatterValue())</span>
 					</div>
 				</div>
-			</div>
-
-			@if(item.Comment is {Length: > 0 }) {
 				<div class="card-body">
-					<p>@((MarkupString)@item.Comment.Replace("\n", "<br/>"))</p>
-				</div>
-			}
+					@foreach (var contractorGroup in group.GroupBy(x => new Value<Contractor, int>(x.Contractor))) {
+						<div>
+							<h3 class="col-3 mb-2 mt-1">@(contractorGroup.Key.StoredValue?.Name ?? "Other")</h3>
 
-			<div class="card-footer">
-				<div>
-					<span>@item.Start.ToString(UserSettings.DateTimeFormatterValue())</span> - <span>@item.End.ToString(UserSettings.DateTimeFormatterValue())</span>
+							@foreach (var item in contractorGroup) {
+								<div class="me-2 bg-dark bg-opacity-10 p-2 rounded-2 m-1">
+									<div class="row">
+										<h5 class="col-6 fs-4">@item.Name</h5>
+										<span class="col-1">@item.TotalTime.ToString(UserSettings.TimeFormatterValue())</span>
+										<span class="col-1"><span>@item.Start.ToString(UserSettings.DateTimeFormatterValue())</span> - <span>@item.End.ToString(UserSettings.DateTimeFormatterValue())</span></span>
+										<div class="col-2">
+											<div class="input-group">
+												<div class="input-group-text">
+													<input class="form-check-input" type="checkbox" value="@item.Marked" />
+												</div>
+												<input class="form-control" type="text" value="@item.MarkComment" />
+											</div>
+										</div>
+									</div>
+
+									@if (item.Comment is { Length: > 0 }) {
+										<p>@((MarkupString) @item.Comment.Replace("\n", "<br/>"))</p>
+									}
+								</div>
+							}
+						</div>
+					}
 				</div>
 			</div>
-		</div>
-	}
+		}
+	</div>
 </div>
 
 @code {
@@ -85,7 +96,7 @@
 		FilterForm.Start = e.Value<DateTime>(DateTime.MinValue);
 		await LoadJobs();
 	}
-	
+
 	private async Task OnFilterValueEndChanged(ChangeEventArgs e) {
 		FilterForm.End = e.Value<DateTime>(DateTime.MaxValue);
 		await LoadJobs();
@@ -114,9 +125,8 @@
 		public static JobsFilterForm Create() {
 			var today = DateTimeOffset.Now;
 
-			JobsFilterForm form = new()
-				{
-					Start = new DateTimeOffset(today.Date),
+			JobsFilterForm form = new() {
+					Start = new DateTimeOffset(today.AddDays(-7).Date),
 					End = new DateTimeOffset(today.Date.AddDays(1))
 				};
 			return form;

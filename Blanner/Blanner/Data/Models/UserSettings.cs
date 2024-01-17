@@ -5,7 +5,7 @@ public class UserSettings
 
     public const string DefaultTimeFormatter = @"hh\:mm";
     public const string DefaultDetailedTimeFormatter = @"hh\:mm\:ss";
-    public const string DefaultDateTimeFormatter = @"d HH\:mm";
+    public const string DefaultDateTimeFormatter = @"HH\:mm";
     public const string DefaultDetailedDateTimeFormatter = @"MMM d HH\:mm\:ss";
 
     public User? User { get; set; }
