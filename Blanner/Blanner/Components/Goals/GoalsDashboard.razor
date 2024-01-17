@@ -124,7 +124,7 @@
     private HubConnection? _hubConnection;
 
     private TimeRangeEditDialog? _dialogRef;
-    private Func<TimeRange, ValueTask>? _dialogCompletion;
+    private Func<TimeRange?, ValueTask>? _dialogCompletion;
 
     private string _userId = "";
     private bool _showTimes;
@@ -241,14 +241,16 @@
         });
     }
 
-    private async Task DialogClosed(TimeRange range) {
-        // TODO: handle cancellation
+    private async Task DialogClosed(TimeRange? range) {
         if(_dialogCompletion is not null) await _dialogCompletion.Invoke(range);
         _dialogCompletion = null;
     }
 
-    private async ValueTask AddTimeActiveGoalCompletion(TimeRange timeRange) {
-        if (ActiveGoalEditFormModel.IsEmpty) return;
+    private async ValueTask AddTimeActiveGoalCompletion(TimeRange? timeRange) {
+        if (ActiveGoalEditFormModel.IsEmpty || timeRange is null) {
+            ActiveGoalTimeEditFormModel = ActiveGoalTimeEditForm.Create();
+            return;
+        }
 
         GoalTimeCreationData request = new(
             ActiveGoalEditFormModel.Id,
@@ -262,8 +264,11 @@
         var response = await Http.PostAsJsonAsync(url, request);
     }
 
-    private async ValueTask EditTimeActiveGoalCompletion(TimeRange timeRange) {
-        if (ActiveGoalEditFormModel.IsEmpty) return;
+    private async ValueTask EditTimeActiveGoalCompletion(TimeRange? timeRange) {
+        if (ActiveGoalEditFormModel.IsEmpty || timeRange is null) {
+            ActiveGoalTimeEditFormModel = ActiveGoalTimeEditForm.Create();
+            return;
+        }
 
         GoalTimeEditData request = new(
             ActiveGoalEditFormModel.Id,
