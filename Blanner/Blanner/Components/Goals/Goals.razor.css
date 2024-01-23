@@ -1,7 +1,4 @@
-﻿.goals-table{
-    container-type: size;
-}
-
+﻿
 .goals-table-header{
     border: solid black;
     border-top: 0;
@@ -12,7 +9,7 @@
 }
 
 .goals-table-body{
-    max-height: 20cqi;
+    max-height: calc(50vh - 360px);
     overflow-y: scroll;
 }
 
