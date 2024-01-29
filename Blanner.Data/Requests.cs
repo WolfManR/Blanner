@@ -1,4 +1,4 @@
-﻿namespace Blanner.Models;
+﻿namespace Blanner.Data;
 
 public sealed record ContractorCreateRequest(string Name, DateTimeOffset CreatedAt);
 public sealed record ContractorEditRequest(int Id, string Name, DateTimeOffset UpdatedAt);

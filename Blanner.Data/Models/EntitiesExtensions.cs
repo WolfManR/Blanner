@@ -1,9 +1,16 @@
 ﻿using Blanner.Data.DataModels;
 
+using System.Linq;
+
 namespace Blanner.Data.Models;
 
 public static class EntitiesExtensions {
-    public static TimeSpan Time(this ITime self) {
+    public static bool IsNullOrEmpty<T>(this IEnumerable<T> self) {
+		return self == null || !self.Any();
+	}
+
+
+	public static TimeSpan Time(this ITime self) {
         return self.End <= self.Start ? TimeSpan.Zero : self.End.Subtract(self.Start);
     }
 

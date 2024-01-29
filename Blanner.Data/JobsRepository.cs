@@ -1,5 +1,4 @@
 ﻿using Blanner.Data.Models;
-using Blanner.Models;
 
 using Microsoft.EntityFrameworkCore;
 

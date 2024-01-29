@@ -1,10 +1,9 @@
 ﻿using Blanner.Data;
 using Blanner.Data.Models;
-using Blanner.Models;
 
 using Microsoft.AspNetCore.Mvc;
 
-namespace Blanner.Api; 
+namespace Blanner.Api;
 public static class ContractorsEndpoints {
     public static void MapContractors(this IEndpointRouteBuilder endpoints) {
         var contractorsGroup = endpoints.MapGroup("/contractors");

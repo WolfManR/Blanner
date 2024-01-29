@@ -1,5 +1,5 @@
-﻿using Blanner.Data.Models;
-using Blanner.Models;
+﻿using Blanner.Data;
+using Blanner.Data.Models;
 
 using Microsoft.AspNetCore.SignalR;
 

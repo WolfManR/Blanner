@@ -1,6 +1,4 @@
-﻿using Microsoft.IdentityModel.Tokens;
-
-namespace Blanner.Data.Models {
+﻿namespace Blanner.Data.Models {
 	public class ActiveGoal() : BaseModel
 	{
 	    public ActiveGoal(Goal goal, DateTimeOffset createDate) : this()

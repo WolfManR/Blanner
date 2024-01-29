@@ -16,6 +16,8 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
+using System.Reflection;
+
 var builder = WebApplication.CreateBuilder(args);
 
 Value<Contractor?, int>.SetKeySelector(x => x?.Id ?? 0);
@@ -37,8 +39,12 @@ builder.Services.AddAuthentication(options =>
 	})
 	.AddIdentityCookies();
 
-var connectionString = builder.Configuration.GetConnectionString("Sqlite") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connectionString));
+var dbProvider = builder.Configuration["DBProvider"] ?? throw new InvalidOperationException("Database provider not selected.");
+var connectionString = builder.Configuration.GetConnectionString(dbProvider) ?? throw new InvalidOperationException($"Connection string '{dbProvider}' not found.");
+builder.Services.AddDbContext<ApplicationDbContext>(options => {
+	if (dbProvider.Equals("sqlite", StringComparison.CurrentCultureIgnoreCase)) options.UseSqlite(connectionString, ctx => ctx.MigrationsAssembly(Assembly.GetAssembly(typeof(SQLiteMigrations.Mark)).FullName));
+	else options.UseSqlServer(connectionString, ctx => ctx.MigrationsAssembly(Assembly.GetAssembly(typeof(SQLServerMigrations.Mark)).FullName)); 
+});
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<User>(options => options.SignIn.RequireConfirmedAccount = true)

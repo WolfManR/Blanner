@@ -1,44 +1,44 @@
 ﻿using Blanner.Data.Models;
+
 using System.Text.Json.Serialization;
 
-namespace Blanner.Models;
+namespace Blanner.Data;
 
 public class GoalData {
-    [JsonConstructor]
-    public GoalData() { }
-
-    public GoalData(Goal data) {
-        Id = data.Id;
-        Name = data.Name;
-        Contractor = data.Contractor;
-        ActiveGoalId = data.ActiveGoal?.Id;
-        Tasks = data.Tasks;
-    }
-
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public Contractor? Contractor { get; set; }
-    public int? ActiveGoalId { get; set; }
-    public List<ToDo> Tasks { get; set; } = [];
-}
-
-public class GoalDetailsData {
 	[JsonConstructor]
-	public GoalDetailsData(){}
+	public GoalData() { }
 
-    public GoalDetailsData(Goal data)
-    {
+	public GoalData(Goal data) {
 		Id = data.Id;
 		Name = data.Name;
 		Contractor = data.Contractor;
 		ActiveGoalId = data.ActiveGoal?.Id;
 		Tasks = data.Tasks;
-    }
+	}
 
-    public int Id { get; set; }
+	public int Id { get; set; }
 	public string Name { get; set; } = string.Empty;
 	public Contractor? Contractor { get; set; }
-    public int? ActiveGoalId { get; set; }
+	public int? ActiveGoalId { get; set; }
+	public List<ToDo> Tasks { get; set; } = [];
+}
+
+public class GoalDetailsData {
+	[JsonConstructor]
+	public GoalDetailsData() { }
+
+	public GoalDetailsData(Goal data) {
+		Id = data.Id;
+		Name = data.Name;
+		Contractor = data.Contractor;
+		ActiveGoalId = data.ActiveGoal?.Id;
+		Tasks = data.Tasks;
+	}
+
+	public int Id { get; set; }
+	public string Name { get; set; } = string.Empty;
+	public Contractor? Contractor { get; set; }
+	public int? ActiveGoalId { get; set; }
 	public List<ToDo> Tasks { get; set; } = [];
 }
 
@@ -96,65 +96,63 @@ public class ActiveGoalDetailsData {
 
 public class ActiveGoalTimeData : IComparable<ActiveGoalTimeData> {
 	[JsonConstructor]
-	public ActiveGoalTimeData()
-    {
-        
-    }
+	public ActiveGoalTimeData() {
 
-    public ActiveGoalTimeData(ActiveGoalTime data)
-    {
+	}
+
+	public ActiveGoalTimeData(ActiveGoalTime data) {
 		Id = data.Id;
 		Start = data.Start;
 		End = data.End;
 		Time = data.Time();
-    }
+	}
 
-    public int Id { get; set; }
-    public DateTimeOffset Start { get; set; }
-    public DateTimeOffset End { get; set; }
-    public TimeSpan Time { get; set; }
+	public int Id { get; set; }
+	public DateTimeOffset Start { get; set; }
+	public DateTimeOffset End { get; set; }
+	public TimeSpan Time { get; set; }
 
-    public int CompareTo(ActiveGoalTimeData? other) {
+	public int CompareTo(ActiveGoalTimeData? other) {
 		if (other is null) return 1;
 		int compareResult = Start.CompareTo(other.Start);
 		if (compareResult < 0) return -1;
 		else if (compareResult > 0) return 1;
-        return End.CompareTo(other.End);
-    }
+		return End.CompareTo(other.End);
+	}
 }
 
 public class JobHeaderData {
-    public int Id { get; set; }
-    public DateTimeOffset Start { get; set; }
-    public DateTimeOffset End { get; set; }
-    
+	public int Id { get; set; }
+	public DateTimeOffset Start { get; set; }
+	public DateTimeOffset End { get; set; }
+
 	public Contractor? Contractor { get; set; }
 	public string Name { get; set; } = string.Empty;
 	public string Comment { get; set; } = string.Empty;
-	
-    public bool Marked { get; set; }
-    public string? MarkComment { get; set; }
 
-    public TimeSpan TotalTime { get; set; }
+	public bool Marked { get; set; }
+	public string? MarkComment { get; set; }
+
+	public TimeSpan TotalTime { get; set; }
 }
 
 public class JobDetailsData {
-    public int Id { get; set; }
-    public DateTimeOffset Start { get; set; }
-    public DateTimeOffset End { get; set; }
-    
+	public int Id { get; set; }
+	public DateTimeOffset Start { get; set; }
+	public DateTimeOffset End { get; set; }
+
 	public Contractor? Contractor { get; set; }
 	public string Name { get; set; } = string.Empty;
 	public string Comment { get; set; } = string.Empty;
-	
-    public bool Marked { get; set; }
-    public string? MarkComment { get; set; }
+
+	public bool Marked { get; set; }
+	public string? MarkComment { get; set; }
 
 	public List<JobDetailsTimeData> Time { get; set; } = [];
 }
 
 public class JobDetailsTimeData {
-    public long Id { get; set; }
+	public long Id { get; set; }
 	public DateTimeOffset Start { get; set; }
 	public DateTimeOffset End { get; set; }
 }
