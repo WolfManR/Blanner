@@ -33,8 +33,9 @@ public static class JobsEndpointsBehaviors {
 		[FromBody] BuildJobData request,
 		[FromServices] ApplicationDbContext dbContext,
         [FromServices] IHubContext<GoalsHub, IGoalsHub> hubContext) {
+		var providerIsSQLite = dbContext.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite";
 
-		User? user = await dbContext.Users.FindAsync(request.UserId);
+        User? user = await dbContext.Users.FindAsync(request.UserId);
 		if (user is null) return TypedResults.BadRequest();
 
         await using (var transaction = await dbContext.Database.BeginTransactionAsync()) {
@@ -59,21 +60,37 @@ public static class JobsEndpointsBehaviors {
 			.Include(x => x.Tasks.Where(x => x.Done))
 			.Include(x => x.GoalTime)
 			.ToListAsync();
-
+		
 		await using (var transaction = await dbContext.Database.BeginTransactionAsync()) {
-			await dbContext.ActiveGoals
-				.Include(x=>x.User)
-				.Include(x => x.GoalTime)
-				.Where(x => x.User != null && x.User.Id == request.UserId)
-				.ExecuteDeleteAsync();
-
-            var handledTasks = await dbContext.ToDos
-                .Include(x => x.User).Where(x => x.User != null && x.User.Id == request.UserId)
-                .Include(x => x.Goal)
-                .Include(x => x.ActiveGoal)
-                .Where(x => x.Done && x.Goal != null && x.ActiveGoal != null)
+			if (!providerIsSQLite) {
+                await dbContext.ActiveGoals
+                .Include(x => x.User)
+                .Include(x => x.GoalTime)
+                .Where(x => x.User != null && x.User.Id == request.UserId)
                 .ExecuteDeleteAsync();
 
+                await dbContext.ToDos
+                    .Include(x => x.User).Where(x => x.User != null && x.User.Id == request.UserId)
+                    .Include(x => x.Goal)
+                    .Include(x => x.ActiveGoal)
+                    .Where(x => x.Done && x.Goal != null && x.ActiveGoal != null)
+                    .ExecuteDeleteAsync();
+			}
+			else {
+				var activeGoalsToDelete = await dbContext.ActiveGoals
+                                .Include(x => x.User).Where(x => x.User != null && x.User.Id == request.UserId)
+								.Include(x => x.GoalTime).ToListAsync();
+				dbContext.RemoveRange(activeGoalsToDelete);
+
+				var handledTasks = await dbContext.ToDos
+									.Include(x => x.User).Where(x => x.User != null && x.User.Id == request.UserId)
+									.Include(x => x.Goal)
+									.Include(x => x.ActiveGoal)
+									.Where(x => x.Done && x.Goal != null && x.ActiveGoal != null)
+									.ToListAsync();
+                dbContext.RemoveRange(handledTasks);
+            }
+			
             await transaction.CommitAsync();
         }
 
