@@ -452,3 +452,6 @@ $RECYCLE.BIN/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+/Blanner/Blanner/Blanner.db
+/Blanner/Blanner/Blanner.db-shm
+/Blanner/Blanner/Blanner.db-wal
