@@ -18,7 +18,7 @@ public class JobsRepository(ApplicationDbContext dbContext) {
                 .ToListAsync();
 
             var data = predata.Where(x => x.End > start && x.Start < end)
-                .Select(x => x.Context).Distinct()
+                .Select(x => x.Context).DistinctBy(x=>x.Id)
                 .Select(x => new {
                     Context = x,
                     Start = _dbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.Start).ToList().Min(),
