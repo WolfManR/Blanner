@@ -26,7 +26,7 @@
 	</EditForm>
 
 	<div class="goals-table">
-		<div class="goals-table-header row fw-bold">
+		<div class="goals-table-header row fw-bold pb-1 align-items-baseline">
 			<div class="col-8">Name</div>
 			<div class="col-4"></div>
 		</div>
@@ -35,7 +35,7 @@
 				@if (value.Count > 0) {
 					Contractor? keyValue = key;
 
-					<div class="row goals-table-item item-header">
+					<div class="row goals-table-item item-header align-items-baseline">
 						<div class="col-8 fw-bold">@(keyValue?.Name ?? "Others")</div>
 						<div class="col-4 d-flex justify-content-end">
 							<button class="btn btn-danger" @onclick="() => DeleteContractorGroup(key)" disabled><i class="bi bi-trash3"></i></button>
@@ -43,13 +43,13 @@
 					</div>
 
 					@foreach (var item in value) {
-						<div class="row goals-table-item item" @onclick="() => SelectGoal(item)">
+						<div class="row goals-table-item item align-items-baseline" @onclick="() => SelectGoal(item)">
 							<div class="col-8 item-text">@item.Name</div>
 							<div class="col-4 d-flex justify-content-between align-bottom">
-								<small><div class="btn-group">
-									<button class="btn btn-secondary" @onclick="() => PushToActive(item)" @onclick:stopPropagation="true"><i class="bi bi-activity"></i></button>
+								<small>
+									<div class="btn-group">
+										<button class="btn btn-secondary" @onclick="() => PushToActive(item)" @onclick:stopPropagation="true"><i class="bi bi-activity"></i></button>
 										<button class="btn btn-success" @onclick="() => ActivateGoal(item)" @onclick:stopPropagation="true"><i class="bi bi-play-fill"></i></button>
-
 									</div>
 								</small>
 								<button class="btn btn-danger" @onclick="() => DeleteGoal(key, item)" @onclick:stopPropagation="true"><i class="bi bi-trash3"></i></button>

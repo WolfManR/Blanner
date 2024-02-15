@@ -9,56 +9,54 @@
 <h3>Active goals</h3>
 
 <CascadingValue Value="UserSettings">
-	<div class="grid" tabindex="-1">
-		<table class="table">
-			<thead>
-				<tr>
-					<th>Total time</th>
-					<th>Name</th>
-					<th>Elapsed</th>
-					<th class="d-flex justify-content-end btn-group-lg">
-						<button class="btn btn-outline-secondary" @onclick="() => Complete()">Complete</button>
-						<button class="btn btn-outline-primary" @onclick="() => BuildJob()">Build Job</button>
-					</th>
-				</tr>
-			</thead>
-			<tbody>
-				@foreach (var (key, value) in _goalsGroups) {
-					@if (value.Count > 0) {
-						Contractor? keyValue = key;
+	@* <div class="grid" tabindex="-1"> *@
+	<div class="goals-table">
+		<div class="goals-table-header row fw-bold align-items-baseline pb-1">
+			<div class="col-2">Total time</div>
+			<div class="col-4">Name</div>
+			<div class="col-3">Elapsed</div>
+			<div class="col-3 d-flex justify-content-end btn-group">
+				<button class="btn btn-outline-secondary" @onclick="() => Complete()">Complete</button>
+				<button class="btn btn-outline-primary" @onclick="() => BuildJob()">Build Job</button>
+			</div>
+		</div>
+		<div class="goals-table-body">
+			@foreach (var (key, value) in _goalsGroups) {
+				@if (value.Count > 0) {
+					Contractor? keyValue = key;
 
-						<tr class="item-header">
-							<td colspan="3" class="fw-bold">@(keyValue?.Name ?? "Others")</td>
-							<td class="d-flex justify-content-end">
-								<button class="btn btn-danger" @onclick="() => DeleteContractorGroup(key)" disabled><i class="bi bi-trash3"></i></button>
-							</td>
-						</tr>
+					<div class="row goals-table-item item-header align-items-baseline">
+						<div class="col-9 fw-bold">@(keyValue?.Name ?? "Others")</div>
+						<div class="col-3 d-flex justify-content-end">
+							<button class="btn btn-danger" @onclick="() => DeleteContractorGroup(key)" disabled><i class="bi bi-trash3"></i></button>
+						</div>
+					</div>
 
-						@foreach (var item in value) {
-							<ActiveGoalRow Goal="item">
-								<RowTemplate>
-									<tr class="item" @onclick="() => SelectGoal(context)">
-										<td>@context.TotalElapsedTime.ToString(UserSettings.TimeFormatterValue())</td>
-										<td>@context.Name</td>
-										<td>@context.TimerTime.ToString(UserSettings.DetailedTimeFormatterValue())</td>
-										<td class="d-flex justify-content-between">
-											@if (context.Tick) {
-												<button class="btn btn-danger" @onclick="() => StopGoal(context)" @onclick:stopPropagation="true"><i class="bi bi-stop-circle"></i></button>
-											}
-											else {
-												<button class="btn btn-success" @onclick="() => ActivateGoal(context)" @onclick:stopPropagation="true"><i class="bi bi-play-fill"></i></button>
-											}
-											<button class="btn btn-danger" @onclick="() => DeleteGoal(key, context)" @onclick:stopPropagation="true"><i class="bi bi-trash3"></i></button>
-										</td>
-									</tr>
-								</RowTemplate>
-							</ActiveGoalRow>
-						}
+					@foreach (var item in value) {
+						<ActiveGoalRow Goal="item">
+							<RowTemplate>
+								<div class="row goals-table-item item align-items-baseline" @onclick="() => SelectGoal(context)">
+									<div class="col-2">@context.TotalElapsedTime.ToString(UserSettings.TimeFormatterValue())</div>
+									<div class="col-4">@context.Name</div>
+									<div class="col-3">@context.TimerTime.ToString(UserSettings.DetailedTimeFormatterValue())</div>
+									<div class="col-3 d-flex justify-content-between align-bottom">
+										@if (context.Tick) {
+											<button class="btn btn-danger" @onclick="() => StopGoal(context)" @onclick:stopPropagation="true"><i class="bi bi-stop-circle"></i></button>
+										}
+										else {
+											<button class="btn btn-success" @onclick="() => ActivateGoal(context)" @onclick:stopPropagation="true"><i class="bi bi-play-fill"></i></button>
+										}
+										<button class="btn btn-danger" @onclick="() => DeleteGoal(key, context)" @onclick:stopPropagation="true"><i class="bi bi-trash3"></i></button>
+									</div>
+								</div>
+							</RowTemplate>
+						</ActiveGoalRow>
 					}
 				}
-			</tbody>
-		</table>
+			}
+		</div>
 	</div>
+	@* </div> *@
 </CascadingValue>
 
 @code {
@@ -102,7 +100,7 @@
 			NavManager.ToAbsoluteUri("api/goals/active").AbsoluteUri,
 			new Dictionary<string, object?> {
 				{ "userId",  _userId }
-				});
+					});
 
 		var response = await Http.GetFromJsonAsync<List<ActiveGoalData>>(url);
 		SetGoalsQuery(response);
