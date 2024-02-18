@@ -6,8 +6,7 @@ using Blanner.Data;
 using Blanner.Data.Models;
 using Blanner.Extensions;
 using Blanner.Hubs;
-using Blanner.Services;
-using Blanner.Services.Jobs;
+
 using Coravel;
 using Coravel.Events.Interfaces;
 using Coravel.Scheduling.Schedule.Interfaces;
@@ -59,6 +58,9 @@ builder.Services
 	.AddScheduler()
 	.AddQueue()
 	.AddEvents();
+
+builder.Services
+	.AddBlazorContextMenu();
 
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
