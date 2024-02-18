@@ -40,7 +40,7 @@
 									<div class="col-2">@context.TotalElapsedTime.ToString(UserSettings.TimeFormatterValue())</div>
 									<div class="col-4">@context.Name</div>
 									<div class="col-3">@context.TimerTime.ToString(UserSettings.DetailedTimeFormatterValue())</div>
-									<div class="col-3 d-flex justify-content-between align-bottom">
+									<div class="col-3 d-flex justify-content-end">
 										@if (context.Tick) {
 											<button class="btn btn-danger" @onclick="() => StopGoal(context)" @onclick:stopPropagation="true"><i class="bi bi-stop-circle"></i></button>
 										}
