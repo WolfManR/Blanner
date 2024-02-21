@@ -33,23 +33,21 @@
 
 							@foreach (var item in contractorGroup) {
 								<div class="me-2 bg-dark bg-opacity-10 p-2 rounded-2 m-1">
-									<div class="row">
+									<div class="row align-items-baseline">
 										<h5 class="col-6 fs-4">@item.Name</h5>
 										<span class="col-1">@item.TotalTime.ToString(UserSettings.TimeFormatterValue())</span>
 										<span class="col-1"><span>@item.Start.ToString(UserSettings.DateTimeFormatterValue())</span> - <span>@item.End.ToString(UserSettings.DateTimeFormatterValue())</span></span>
-										<div class="col-2">
-											<div class="input-group">
-												<div class="input-group-text">
-													<input class="form-check-input" type="checkbox" value="@item.Marked" />
-												</div>
-												<input class="form-control" type="text" value="@item.MarkComment" />
-											</div>
+										<div class="col-1">
+											<input class="form-check-input" type="checkbox" value="@item.Marked" />
 										</div>
 									</div>
 
 									@if (item.Comment is { Length: > 0 }) {
-										<p>@((MarkupString) @item.Comment.Replace("\n", "<br/>"))</p>
+										<div class="me-3 mt-2 bg-white p-2 rounded-1">
+											<p>@((MarkupString) @item.Comment.Replace("\n", "<br/>"))</p>
+										</div>
 									}
+									
 								</div>
 							}
 						</div>
