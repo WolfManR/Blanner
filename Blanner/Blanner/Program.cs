@@ -14,6 +14,7 @@ using Coravel.Scheduling.Schedule.Interfaces;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.FluentUI.AspNetCore.Components;
 
 using System.Reflection;
 
@@ -62,8 +63,11 @@ builder.Services
 builder.Services
 	.AddBlazorContextMenu();
 
+
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
+
+builder.Services.AddFluentUIComponents();
 
 builder.Services.RegisterServices();
 
