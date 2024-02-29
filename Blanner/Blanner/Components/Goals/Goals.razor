@@ -3,6 +3,7 @@
 @inject NavigationManager NavManager
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IDialogService DialogService
 
 @attribute [Authorize]
 @rendermode InteractiveServer
@@ -28,8 +29,8 @@
 
 	<div class="goals-table">
 		<div class="goals-table-header row fw-bold pb-1 align-items-baseline">
-			<div class="col-8">Name</div>
-			<div class="col-4"></div>
+			<div class="col-10">Name</div>
+			<div class="col-2"></div>
 		</div>
 		<div class="goals-table-body">
 			@foreach (var (key, value) in _goalsGroups) {
@@ -37,31 +38,36 @@
 					Contractor? keyValue = key;
 
 					<div class="row goals-table-item item-header align-items-baseline">
-						<div class="col-8 fw-bold">@(keyValue?.Name ?? "Others")</div>
-						<div class="col-4 d-flex justify-content-end">
+						<div class="col-10 fw-bold">@(keyValue?.Name ?? "Others")</div>
+						<div class="col-2 d-flex justify-content-end">
 							<button class="btn btn-danger" @onclick="() => DeleteContractorGroup(key)" disabled><i class="bi bi-trash3"></i></button>
 						</div>
 					</div>
 
 					@foreach (var item in value) {
-						<div class="row goals-table-item item align-items-baseline" @onclick="() => SelectGoal(item)">
-							<div class="col-8 item-text">@item.Name</div>
-							<div class="col-4 d-flex justify-content-between align-bottom">
-								<small>
-									<div class="btn-group">
-										<button class="btn btn-secondary" @onclick="() => PushToActive(item)" @onclick:stopPropagation="true"><i class="bi bi-activity"></i></button>
-										<button class="btn btn-success" @onclick="() => ActivateGoal(item)" @onclick:stopPropagation="true"><i class="bi bi-play-fill"></i></button>
-									</div>
-								</small>
-								<button class="btn btn-danger" @onclick="() => DeleteGoal(key, item)" @onclick:stopPropagation="true"><i class="bi bi-trash3"></i></button>
+						<ContextMenuTrigger WrapperTag="div" MenuId="GoalsContextMenu" Data="@item">
+						<div class="row goals-table-item item align-items-baseline">
+							<div class="col-10 item-text">@item.Name</div>
+							<div class="col-2 d-flex justify-content-end align-bottom">
+								<div class="btn-group">
+									<button class="btn btn-secondary" @onclick="() => PushToActive(item)" @onclick:stopPropagation="true"><i class="bi bi-activity"></i></button>
+									<button class="btn btn-success" @onclick="() => ActivateGoal(item)" @onclick:stopPropagation="true"><i class="bi bi-play-fill"></i></button>
+								</div>
 							</div>
 						</div>
+						</ContextMenuTrigger>
 					}
 				}
 			}
 		</div>
 	</div>
+
+	<ContextMenu Id="GoalsContextMenu">
+		<Item OnClick="SelectGoal"><i class="bi bi-pencil"></i> Edit</Item>
+		<Item OnClick="DeleteGoal"><i class="bi bi-trash3"></i> Delete</Item>
+	</ContextMenu>
 </div>
+
 
 @code {
 	private HubConnection? _hubConnection;
@@ -131,8 +137,20 @@
 		var response = await Http.PostAsJsonAsync(url, request);
 	}
 
-	private async Task SelectGoal(GoalVM item) {
-		if (OnSelected.HasDelegate) await OnSelected.InvokeAsync(item.Id);
+	private async Task SelectGoal(ItemClickEventArgs e) {
+		if (e.Data is not GoalVM item) return;
+		DialogParameters parameters = new() {
+				Title = "Goal",
+				Width = "40vw",
+				Modal = true,
+				PreventScroll = true,
+				ShowDismiss = true
+			};
+
+		IDialogReference dialog = await DialogService.ShowDialogAsync<GoalEdit>(new GoalEditParameters(item.Id), parameters);
+		await dialog.Result;
+
+		// if (OnSelected.HasDelegate) await OnSelected.InvokeAsync(item.Id);
 	}
 
 	private Task DeleteContractorGroup(Value<Contractor, int> groupKey) {
@@ -150,7 +168,8 @@
 		var response = await Http.PostAsJsonAsync(url, request);
 	}
 
-	private async Task DeleteGoal(Value<Contractor, int> groupKey, GoalVM item) {
+	private async Task DeleteGoal(ItemClickEventArgs e) {
+		if (e.Data is not GoalVM item) return;
 		GoalDeleteData request = new(item.Id, _userId);
 
 		var url = NavManager.ToAbsoluteUri("api/goals/delete").AbsoluteUri;

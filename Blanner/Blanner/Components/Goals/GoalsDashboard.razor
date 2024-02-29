@@ -12,44 +12,18 @@
 @rendermode InteractiveServerNotPrerendered
 
 <PageTitle>Goals</PageTitle>
-<FluentButton OnClick="OpenGoalsDialog">Open Dialog</FluentButton>
+
 <div class="area" style="height: calc(100vh - 80px)">
     
     <div class="area-active">
         <ActiveGoals OnSelected="ShowActiveGoalDetails" />
     </div>
-   @*  <div class="area-goals">
-        <Goals OnSelected="ShowGoalDetails" />
-    </div> *@
+
     <div class="area-selected px-4 py-4" style="height: calc(100%);">
-        @if (!GoalEditFormModel.IsEmpty) {
-            <div class="btn-group">
-                <button class="btn btn-primary" @onclick="SaveGoalChanges"><i class="bi bi-floppy"></i></button>
-                <button class="btn btn-secondary" @onclick="ClearGoalForm"><i class="bi bi-x-circle"></i></button>
-            </div>
-
-            <EditForm FormName="GoalEditForm" Model="GoalEditFormModel" class="d-flex flex-column gap-2 mt-3">
-                <div class="input-group mb-3">
-                    <label class="input-group-text" for="goalContractorInput">Contractor</label>
-                    <InputSelect class="form-select" @bind-Value="GoalEditFormModel.Contractor" id="goalContractorInput" DisplayName="Contractor">
-                        <option value="0">Empty</option>
-                        @foreach (var item in Contractors) {
-                            <option value="@item.Id">@item.Name</option>
-                        }
-                    </InputSelect>
-                </div>
-
-                <div class="input-group mb-3">
-                    <label class="input-group-text">Name</label>
-                    <InputText class="form-control" @bind-Value="GoalEditFormModel.Name" DisplayName="Name" />
-                </div>
-            </EditForm>
-        }
         @if (!ActiveGoalEditFormModel.IsEmpty) {
             <div class="d-flex align-items-center justify-content-between">
                 <div class="btn-group">
                     <button class="btn btn-primary" @onclick="SaveActiveGoalChanges"><i class="bi bi-floppy"></i></button>
-                    <button class="btn btn-secondary" @onclick="ClearActiveGoalForm"><i class="bi bi-x-circle"></i></button>
                 </div>
 
                 <div class="form-check form-switch">
@@ -130,7 +104,7 @@
 
     private string _userId = "";
     private bool _showTimes;
-    private GoalEditForm GoalEditFormModel { get; set; } = GoalEditForm.Create();
+    
     private ActiveGoalEditForm ActiveGoalEditFormModel { get; set; } = ActiveGoalEditForm.Create();
     private ActiveGoalTimeEditForm ActiveGoalTimeEditFormModel { get; set; } = ActiveGoalTimeEditForm.Create();
 
@@ -165,59 +139,16 @@
         await _hubConnection.StartAsync();
     }
 
-    private async Task OpenGoalsDialog() {
-        DialogParameters parameters = new()
-            {
-                Title = "Goals",
-                PrimaryActionEnabled = false,
-                SecondaryActionEnabled = false,
-                Width = "40vw",
-                Modal = false,
-                PreventScroll = false,
-                Alignment = HorizontalAlignment.Right,
-                ShowDismiss = true,
-            };
 
-        IDialogReference dialog = await DialogService.ShowPanelAsync<Goals>(parameters);
-        await dialog.Result;
-    }
-
-
-    private async Task ShowGoalDetails(int goalId) {
-        SetActiveGoalData();
-        var url = NavManager.ToAbsoluteUri($"api/goals/{goalId}").AbsoluteUri;
-
-        var response = await Http.GetFromJsonAsync<GoalDetailsData>(url);
-        SetGoalData(response);
-    }
     private async Task ShowActiveGoalDetails(int goalId) {
-        SetGoalData();
         var url = NavManager.ToAbsoluteUri($"api/goals/active/{goalId}").AbsoluteUri;
 
         var response = await Http.GetFromJsonAsync<ActiveGoalDetailsData>(url);
         SetActiveGoalData(response);
     }
 
-    private void SetGoalData(GoalDetailsData? data = default) {
-        GoalEditFormModel = GoalEditForm.Create(data);
-    }
-
     private void SetActiveGoalData(ActiveGoalDetailsData? data = default) {
         ActiveGoalEditFormModel = ActiveGoalEditForm.Create(data);
-    }
-
-    private async Task SaveGoalChanges() {
-        if (GoalEditFormModel.IsEmpty) return;
-        var (goalId, name, contractorId) = GoalEditFormModel;
-        GoalHeaderChangesSaveData request = new(goalId, _userId, name, contractorId);
-
-        var url = NavManager.ToAbsoluteUri($"api/goals/save/header").AbsoluteUri;
-
-        var response = await Http.PostAsJsonAsync(url, request);
-    }
-
-    private void ClearGoalForm() {
-        GoalEditFormModel = GoalEditForm.Create();
     }
 
 
@@ -229,10 +160,6 @@
         var url = NavManager.ToAbsoluteUri($"api/goals/active/save/header").AbsoluteUri;
 
         var response = await Http.PostAsJsonAsync(url, request);
-    }
-
-    private void ClearActiveGoalForm() {
-        ActiveGoalEditFormModel = ActiveGoalEditForm.Create();
     }
 
     private void ShowHideActiveGoalTimes() {
@@ -251,7 +178,7 @@
         await OpenDialog(EditTimeActiveGoalCompletion);
     }
 
-    private async ValueTask OpenDialog(Func<TimeRange, ValueTask> dialogCompletion) {
+    private async ValueTask OpenDialog(Func<TimeRange?, ValueTask> dialogCompletion) {
         if (_dialogRef is null) return;
 
         _dialogCompletion = dialogCompletion;
@@ -315,11 +242,6 @@
     private async Task OnActiveGoalHeaderEdited(int goalId, string userId, ActiveGoalHeaderData data) {
         if (_userId != userId) return;
         bool changed = false;
-        if (GoalEditFormModel.ActiveGoalId == goalId) {
-            GoalEditFormModel.Set(data);
-            changed = true;
-            return;
-        }
         if (ActiveGoalEditFormModel.Id == goalId) {
             ActiveGoalEditFormModel.Set(data);
             changed = true;
@@ -332,11 +254,6 @@
     private async Task OnGoalHeaderEdited(int goalId, string userId, GoalHeaderData data) {
         if (_userId != userId) return;
         bool changed = false;
-        if (GoalEditFormModel.ActiveGoalId == goalId) {
-            GoalEditFormModel.Set(data);
-            changed = true;
-            return;
-        }
         if (ActiveGoalEditFormModel.Id == goalId) {
             ActiveGoalEditFormModel.Set(data);
             changed = true;
@@ -351,11 +268,6 @@
 
         bool changed = false;
 
-        if (GoalEditFormModel.Id == data.GoalId) {
-            GoalEditFormModel.ActiveGoalId = data.Id;
-            changed = true;
-        }
-
         if (ActiveGoalEditFormModel.Id != goalId) {
             ActiveGoalEditFormModel.ActiveTimerId = data.ActiveTimerId;
             changed = true;
@@ -366,9 +278,6 @@
 
     private async Task OnGoalDeleted(int goalId, string userId) {
         if (_userId != userId) return;
-        if (GoalEditFormModel.Id == goalId) {
-            GoalEditFormModel = GoalEditForm.Create();
-        }
         if (ActiveGoalEditFormModel.GoalId == goalId) {
             ActiveGoalEditFormModel = ActiveGoalEditForm.Create();
         }
@@ -378,9 +287,6 @@
 
     private async Task OnActiveGoalDeleted(int goalId, string userId) {
         if (_userId != userId) return;
-        if (GoalEditFormModel.Id == goalId) {
-            GoalEditFormModel.ActiveGoalId = null;
-        }
         if (ActiveGoalEditFormModel.GoalId == goalId) {
             ActiveGoalEditFormModel = ActiveGoalEditForm.Create();
         }
@@ -449,97 +355,5 @@
     }
 
 
-    class GoalEditForm() {
-        private static GoalEditForm Empty { get; set; } = new();
-        public bool IsEmpty => ReferenceEquals(this, Empty);
-
-        public int Id { get; set; }
-        public int? ActiveGoalId { get; set; }
-
-        public string Name { get; set; } = string.Empty;
-        public int? Contractor { get; set; }
-
-        public static GoalEditForm Create(GoalDetailsData? data = default) {
-            if (data is null) return Empty;
-            return new() {
-                    Id = data.Id,
-                    Name = data.Name,
-                    Contractor = data.Contractor?.Id ?? 0,
-                    ActiveGoalId = data.ActiveGoalId
-                };
-        }
-
-        public void Set(GoalHeaderData data) {
-            Name = data.Name;
-            Contractor = data.Contractor?.Id;
-        }
-        public virtual void Set(ActiveGoalHeaderData data) {
-            Name = data.Name;
-            Contractor = data.Contractor?.Id;
-        }
-
-        public void Deconstruct(out int id, out string name, out int? contractor) {
-            id = Id;
-            name = Name;
-            contractor = Contractor;
-        }
-    }
-
-    class ActiveGoalEditForm() : GoalEditForm {
-        private static ActiveGoalEditForm Empty { get; set; } = new();
-        public new bool IsEmpty => ReferenceEquals(this, Empty);
-        public int GoalId { get; set; }
-
-        public string Comment { get; set; } = string.Empty;
-
-        public int? ActiveTimerId { get; set; }
-
-        public List<ActiveGoalTimeData> GoalTime { get; set; } = new();
-
-        public static ActiveGoalEditForm Create(ActiveGoalDetailsData? data = default) {
-            if (data is null) return Empty;
-            return new() {
-                    Id = data.Id,
-                    Name = data.Name,
-                    Contractor = data.Contractor?.Id ?? 0,
-                    Comment = data.Comment,
-                    GoalId = data.GoalId,
-                    GoalTime = data.GoalTime
-                };
-        }
-
-        public override void Set(ActiveGoalHeaderData data) {
-            base.Set(data);
-            Comment = data.Comment;
-        }
-
-        public void Deconstruct(out int id, out string name, out int? contractor, out string comment) {
-            id = Id;
-            name = Name;
-            contractor = Contractor;
-            comment = Comment;
-        }
-    }
-
-    class ActiveGoalTimeEditForm {
-        public int Id { get; set; }
-        public DateTimeOffset Start { get; set; }
-        public DateTimeOffset End { get; set; }
-
-        public static ActiveGoalTimeEditForm Create(ActiveGoalTimeData? data = default) {
-            if (data is null) {
-				var rangeValue = DateTimeOffset.Now;
-				return new() {
-						Start = rangeValue,
-						End = rangeValue
-					};
-			}
-
-            return new() {
-                    Id = data.Id,
-                    Start = data.Start,
-                    End = data.End
-                };
-        }
-    }
+   
 }

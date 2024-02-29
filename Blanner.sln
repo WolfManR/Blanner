@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SQLiteMigrations", "Migrati
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blanner.Data", "Blanner.Data\Blanner.Data.csproj", "{AC3DDCEE-0E77-437F-A1F9-55C6AE9FA79E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLServerMigrations", "Migrations\SQLServerMigrations\SQLServerMigrations.csproj", "{E9317286-CEF7-4656-A33D-8EFAE94CA1ED}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SQLServerMigrations", "Migrations\SQLServerMigrations\SQLServerMigrations.csproj", "{E9317286-CEF7-4656-A33D-8EFAE94CA1ED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

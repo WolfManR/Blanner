@@ -2,6 +2,7 @@
 @inject NavigationManager NavManager
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IDialogService DialogService
 
 @attribute [Authorize]
 @rendermode InteractiveServerNotPrerendered
@@ -16,8 +17,9 @@
 			<div class="col-4">Name</div>
 			<div class="col-3">Elapsed</div>
 			<div class="col-3 d-flex justify-content-end btn-group">
-				<button class="btn btn-outline-secondary" @onclick="() => Complete()">Complete</button>
-				<button class="btn btn-outline-primary" @onclick="() => BuildJob()">Build Job</button>
+                <FluentButton Appearance="Appearance.Outline" OnClick="OpenGoalsDialog">Goals</FluentButton>
+                <FluentButton Appearance="Appearance.Outline" OnClick="() => Complete()">Complete</FluentButton>
+                <FluentButton Appearance="Appearance.Accent" OnClick="() => BuildJob()">Build Job</FluentButton>
 			</div>
 		</div>
 		<div class="goals-table-body">
@@ -98,6 +100,22 @@
         _hubConnection.On<string>(nameof(IGoalsHub.JobsBuilded), OnJobsBuilded);
 
         await _hubConnection.StartAsync();
+    }
+
+    private async Task OpenGoalsDialog() {
+        DialogParameters parameters = new() {
+                Title = "Goals",
+                PrimaryAction = "Done",
+                SecondaryActionEnabled = false,
+                Width = "40vw",
+                Modal = true,
+                PreventScroll = false,
+                Alignment = HorizontalAlignment.Right,
+                ShowDismiss = true,
+            };
+
+        IDialogReference dialog = await DialogService.ShowPanelAsync<Goals>(parameters);
+        await dialog.Result;
     }
 
     private async Task LoadGoals() {
