@@ -6,8 +6,9 @@
 
 @attribute [Authorize]
 @rendermode InteractiveServer
+@implements IDialogContentComponent
 
-<h3>Goals</h3>
+<FluentDialogHeader>Goals</FluentDialogHeader>
 
 <div>
 	<EditForm FormName="GoalCreation" Model="NewGoal" OnValidSubmit="CreateGoal">
@@ -68,6 +69,9 @@
 	private string _userId = "";
 	private List<GoalVM> _goals = new();
 	private Dictionary<Value<Contractor, int>, List<GoalVM>> _goalsGroups = new();
+
+	[CascadingParameter]
+	public FluentDialog Dialog { get; set; } = default!;
 
 	[SupplyParameterFromForm]
 	private GoalsFilterForm FilterForm { get; set; } = new();

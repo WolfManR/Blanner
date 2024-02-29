@@ -6,19 +6,21 @@
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
+@inject IDialogService DialogService
 
 @attribute [Authorize]
 @rendermode InteractiveServerNotPrerendered
 
 <PageTitle>Goals</PageTitle>
-
+<FluentButton OnClick="OpenGoalsDialog">Open Dialog</FluentButton>
 <div class="area" style="height: calc(100vh - 80px)">
+    
     <div class="area-active">
         <ActiveGoals OnSelected="ShowActiveGoalDetails" />
     </div>
-    <div class="area-goals">
+   @*  <div class="area-goals">
         <Goals OnSelected="ShowGoalDetails" />
-    </div>
+    </div> *@
     <div class="area-selected px-4 py-4" style="height: calc(100%);">
         @if (!GoalEditFormModel.IsEmpty) {
             <div class="btn-group">
@@ -162,6 +164,24 @@
 
         await _hubConnection.StartAsync();
     }
+
+    private async Task OpenGoalsDialog() {
+        DialogParameters parameters = new()
+            {
+                Title = "Goals",
+                PrimaryActionEnabled = false,
+                SecondaryActionEnabled = false,
+                Width = "40vw",
+                Modal = false,
+                PreventScroll = false,
+                Alignment = HorizontalAlignment.Right,
+                ShowDismiss = true,
+            };
+
+        IDialogReference dialog = await DialogService.ShowPanelAsync<Goals>(parameters);
+        await dialog.Result;
+    }
+
 
     private async Task ShowGoalDetails(int goalId) {
         SetActiveGoalData();

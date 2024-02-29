@@ -9,7 +9,6 @@
 }
 
 .goals-table-body{
-    max-height: calc(50vh);
     overflow-y: auto;
 }
 
