@@ -191,7 +191,22 @@
 		GoalVM? goal = _goals.Find(x => x.ActiveGoalId == goalId);
 		if (goal is null) return;
 
+		var previousContractor = goal.Contractor;
+		var currentContractor = data.Contractor;
+
 		goal.Set(data);
+
+		if (previousContractor?.Id != currentContractor?.Id) {
+			if (_goalsGroups.TryGetValue(new(previousContractor), out var previousGroup)) {
+				previousGroup.Remove(goal);
+			}
+			if (_goalsGroups.TryGetValue(new(currentContractor), out var currentGroup)) {
+				currentGroup.Add(goal);
+			}
+			else {
+				_goalsGroups.TryAdd(new(currentContractor), new() { goal });
+			}
+		}
 
 		await InvokeAsync(StateHasChanged);
 	}
@@ -201,7 +216,22 @@
 		GoalVM? goal = _goals.Find(x => x.Id == goalId);
 		if (goal is null) return;
 
+		var previousContractor = goal.Contractor;
+		var currentContractor = data.Contractor;
+
 		goal.Set(data);
+
+		if(previousContractor?.Id != currentContractor?.Id) {
+			if(_goalsGroups.TryGetValue(new(previousContractor), out var previousGroup)) {
+				previousGroup.Remove(goal);
+			}
+			if(_goalsGroups.TryGetValue(new(currentContractor), out var currentGroup)) {
+				currentGroup.Add(goal);
+			}
+			else {
+				_goalsGroups.TryAdd(new(currentContractor), new() { goal });
+			}
+		}
 
 		await InvokeAsync(StateHasChanged);
 	}
