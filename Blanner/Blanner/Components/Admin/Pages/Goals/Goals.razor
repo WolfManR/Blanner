@@ -1,0 +1,29 @@
+﻿@page "/Admin/Goals"
+@using Microsoft.EntityFrameworkCore
+
+
+@rendermode InteractiveServer
+
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavManger
+
+<h3>Goals</h3>
+
+<FluentDataGrid TGridItem="Goal" Items="@DbContext.Goals.Include(p => p.Contractor).Include(e => e.User).Include(e => e.ActiveGoal)" GridTemplateColumns=".5fr 2fr 1fr 1fr 1fr 1fr">
+	<PropertyColumn Property="@(p => p.Id)" Title="№"/>
+	<PropertyColumn Property="@(p => p.Name)" Sortable="true" />
+	<PropertyColumn Property="@(p => p.Contractor)" Sortable="true"/>
+	<PropertyColumn Property="@(p => p.User)" Sortable="true"/>
+	<PropertyColumn Property="@(p => p.ActiveGoal)"/>
+	<TemplateColumn Title="Actions" Align="@Align.End">
+		<FluentButton IconEnd="@(new Icons.Regular.Size16.Edit())" OnClick="@(() =>{})" />
+		<FluentButton IconEnd="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => {
+				DbContext.Remove(context);
+				NavManger.Refresh();
+			})" />
+	</TemplateColumn>
+</FluentDataGrid>
+
+@code {
+
+}
