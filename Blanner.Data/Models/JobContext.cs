@@ -6,4 +6,6 @@ public class JobContext {
     public bool Marked { get; set; }
     public string? MarkComment { get; set; }
     public Contractor? Contractor { get; set; }
+
+    public override string ToString() => Name;
 }
