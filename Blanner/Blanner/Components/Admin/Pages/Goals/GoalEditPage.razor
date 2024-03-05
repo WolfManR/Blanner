@@ -1,0 +1,95 @@
+﻿@page "/Admin/Goals/{Id:int}"
+
+@rendermode InteractiveServer
+
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavManager
+@inject HttpClient Http
+
+<EditForm FormName="AdminGoalEditForm" Model="this">
+	<DataAnnotationsValidator />
+	<FluentValidationSummary />
+
+	<FluentStack Orientation="Orientation.Vertical">
+		<input @bind-value="@Id" hidden />
+
+		<div>
+			<FluentTextField Name="Name" @bind-Value="Name" Label="Name" Style="width: 40rem" Required />
+		</div>
+		<div>
+			<FluentCombobox Label="Contractor"
+							Items="@DbContext.Contractors"
+							OptionValue="@(i => i?.Id.ToString())"
+							@bind-SelectedOption="@Contractor"
+							Context="contractorContext">
+				<OptionTemplate>
+					@contractorContext?.Name
+				</OptionTemplate>
+			</FluentCombobox>
+		</div>
+
+		<div>
+			<FluentCombobox Label="User"
+							Items="@DbContext.Users"
+							OptionValue="@(i => i?.Id)"
+							@bind-SelectedOption="@User"
+							Context="userContext">
+				<OptionTemplate>
+					@userContext?.UserName
+				</OptionTemplate>
+			</FluentCombobox>
+		</div>
+	</FluentStack>
+</EditForm>
+
+<FluentStack>
+	<FluentButton OnClick="Save">Save</FluentButton>
+</FluentStack>
+
+@code {
+	private IEnumerable<Contractor> SelectedItems = Array.Empty<Contractor>();
+
+
+	[Parameter]
+	public int Id { get; set; }
+
+	public string? Name { get; set; }
+	public Contractor? Contractor { get; set; }
+	public User? User { get; set; }
+	public ActiveGoal? ActiveGoal { get; set; }
+
+	protected override async Task OnParametersSetAsync() {
+		if (Id == 0) return;
+		var entity = await DbContext.Goals.Include(e => e.User).Include(e => e.ActiveGoal).Include(e => e.Contractor).FirstOrDefaultAsync(e => e.Id == Id);
+		if (entity is null) return;
+		Name = entity.Name;
+		Contractor = entity.Contractor;
+		User = entity.User;
+		ActiveGoal = entity.ActiveGoal;
+	}
+
+	private async Task Save() {
+		if (User is null) return;
+		if (Name is null) return;
+
+		object request;
+		string uri;
+
+		if(Id == 0) {
+			request = new GoalCreationData(Name, User.Id);
+
+			uri = "api/goals/save";
+		}
+		else {
+			request = new GoalHeaderChangesSaveData(Id, User.Id, Name, Contractor?.Id);
+
+			uri = "api/goals/save/header";
+		}
+
+		var url = NavManager.ToAbsoluteUri(uri).AbsoluteUri;
+
+		var response = await Http.PostAsJsonAsync(url, request);
+
+		if (response.IsSuccessStatusCode) NavManager.NavigateTo("/Admin/Goals");
+	}
+}
