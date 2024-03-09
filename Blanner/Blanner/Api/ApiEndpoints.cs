@@ -6,6 +6,7 @@
 			apiGroup.MapGoals();
 			apiGroup.MapContractors();
 			apiGroup.MapJobs();
+			apiGroup.MapUsers();
 
 	        return endpoints;
 	    }

@@ -119,6 +119,7 @@ internal static class HostExtensions {
 		services.AddScoped<GoalsRepository>();
 		services.AddScoped<ActiveGoalsRepository>();
 		services.AddScoped<JobsRepository>();
+		services.AddScoped<UsersRepository>();
 
 		services.RegisterScheduledJobs();
 		services.RegisterEvents();

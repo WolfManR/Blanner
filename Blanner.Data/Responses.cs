@@ -156,3 +156,34 @@ public class JobDetailsTimeData {
 	public DateTimeOffset Start { get; set; }
 	public DateTimeOffset End { get; set; }
 }
+
+public class UserSelectListData {
+	[JsonConstructor]
+	public UserSelectListData()
+    {
+        
+    }
+    public UserSelectListData(User data)
+    {
+		Id = data.Id;
+		Name = data.UserName;
+    }
+
+    public string Id { get; set; } = default!;
+	public string? Name { get; set; }
+}
+
+public class UserInfoData {
+	[JsonConstructor]
+	public UserInfoData()
+    {
+        
+    }
+    public UserInfoData(User data) {
+		Id = data.Id;
+		Name = data.UserName;
+	}
+
+	public string Id { get; set; } = default!;
+	public string? Name { get; set; }
+}
