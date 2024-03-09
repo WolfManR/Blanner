@@ -63,7 +63,6 @@
 	</div>
 
 	<ContextMenu Id="GoalsContextMenu">
-		<Item OnClick="SelectGoal"><i class="bi bi-pencil"></i> Edit</Item>
 		<Item OnClick="DeleteGoal"><i class="bi bi-trash3"></i> Delete</Item>
 	</ContextMenu>
 </div>
@@ -137,21 +136,6 @@
 		var response = await Http.PostAsJsonAsync(url, request);
 	}
 
-	private async Task SelectGoal(ItemClickEventArgs e) {
-		if (e.Data is not GoalVM item) return;
-		DialogParameters parameters = new() {
-				Title = "Goal",
-				Width = "40vw",
-				Modal = true,
-				PreventScroll = true,
-				ShowDismiss = true
-			};
-
-		IDialogReference dialog = await DialogService.ShowDialogAsync<GoalEdit>(new GoalEditParameters(item.Id), parameters);
-		await dialog.Result;
-
-		// if (OnSelected.HasDelegate) await OnSelected.InvokeAsync(item.Id);
-	}
 
 	private Task DeleteContractorGroup(Value<Contractor, int> groupKey) {
 		// if (_goalsGroups.Remove(groupKey, out var list)) {
@@ -187,7 +171,6 @@
 
 
 	private async Task OnActiveGoalHeaderEdited(int goalId, string userId, ActiveGoalHeaderData data) {
-		if (_userId != userId) return;
 		GoalVM? goal = _goals.Find(x => x.ActiveGoalId == goalId);
 		if (goal is null) return;
 
@@ -212,7 +195,6 @@
 	}
 
 	private async Task OnGoalHeaderEdited(int goalId, string userId, GoalHeaderData data) {
-		if (_userId != userId) return;
 		GoalVM? goal = _goals.Find(x => x.Id == goalId);
 		if (goal is null) return;
 
@@ -237,7 +219,7 @@
 	}
 
 	private async Task OnGoalActivated(int goalId, int activeGoalId, string userId, ActiveGoalData data) {
-		if (_userId != userId || !FilterForm.IncludeActive) return;
+		if (!FilterForm.IncludeActive) return;
 		GoalVM? goal = _goals.Find(x => x.Id == goalId);
 		if (goal is null) return;
 		goal.SetActiveData(data);
@@ -246,7 +228,6 @@
 	}
 
 	private async Task OnGoalCreated(int goalId, string userId, GoalData data) {
-		if (_userId != userId) return;
 		GoalVM? goal = _goals.Find(x => x.Id == goalId);
 		if (goal is not null) return;
 		goal = new(data);
@@ -262,7 +243,6 @@
 	}
 
 	private async Task OnGoalDeleted(int goalId, string userId) {
-		if (_userId != userId) return;
 		GoalVM? goal = _goals.Find(x => x.Id == goalId);
 		if (goal is null) return;
 
@@ -277,7 +257,6 @@
 	}
 
 	private async Task OnActiveGoalDeleted(int goalId, string userId) {
-		if (_userId != userId) return;
 		GoalVM? goal = _goals.Find(x => x.Id == goalId);
 		if (goal is null) return;
 

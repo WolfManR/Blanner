@@ -1,10 +1,11 @@
 ﻿@page "/Admin/Goals/{Id:int}"
 
-@rendermode InteractiveServer
+@rendermode InteractiveServerNotPrerendered
 
-@inject ApplicationDbContext DbContext
 @inject NavigationManager NavManager
 @inject HttpClient Http
+@inject UserManager<User> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <EditForm FormName="AdminGoalEditForm" Model="this">
 	<DataAnnotationsValidator />
@@ -16,28 +17,28 @@
 		<div>
 			<FluentTextField Name="Name" @bind-Value="Name" Label="Name" Style="width: 40rem" Required />
 		</div>
-		<div>
-			<FluentCombobox Label="Contractor"
-							Items="@DbContext.Contractors"
-							OptionValue="@(i => i?.Id.ToString())"
-							@bind-SelectedOption="@Contractor"
-							Context="contractorContext">
-				<OptionTemplate>
-					@contractorContext?.Name
-				</OptionTemplate>
-			</FluentCombobox>
-		</div>
+			<div class="mb-3">
+				<label>
+					Contractor
+				<InputSelect class="form-select" @bind-Value="Contractor" DisplayName="Contractor">
+					<option value="0">Empty</option>
+					@foreach (var item in _contractors) {
+						<option value="@item.Id">@item.Name</option>
+					}
+				</InputSelect>
+				</label>
+			</div>
 
-		<div>
-			<FluentCombobox Label="User"
-							Items="@DbContext.Users"
-							OptionValue="@(i => i?.Id)"
-							@bind-SelectedOption="@User"
-							Context="userContext">
-				<OptionTemplate>
-					@userContext?.UserName
-				</OptionTemplate>
-			</FluentCombobox>
+		<div class="mb-3">
+			<label>
+				User
+				<InputSelect class="form-select" @bind-Value="User" DisplayName="User">
+					<option value="0">Empty</option>
+					@foreach (var item in _users) {
+						<option value="@item.Id">@item.Name</option>
+					}
+				</InputSelect>
+			</label>
 		</div>
 	</FluentStack>
 </EditForm>
@@ -47,41 +48,59 @@
 </FluentStack>
 
 @code {
-	private IEnumerable<Contractor> SelectedItems = Array.Empty<Contractor>();
+	private List<Contractor> _contractors = [];
+	private List<UserSelectListData> _users = [];
+	private string _userId = "";
 
 
 	[Parameter]
 	public int Id { get; set; }
 
 	public string? Name { get; set; }
-	public Contractor? Contractor { get; set; }
-	public User? User { get; set; }
-	public ActiveGoal? ActiveGoal { get; set; }
+	public int? Contractor { get; set; }
+	public string? User { get; set; }
+	public int? ActiveGoalId { get; set; }
+
+	protected override async Task OnInitializedAsync() {
+		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		_userId = UserManager.GetUserId(state.User) ?? "";
+
+
+		var uri = NavManager.ToAbsoluteUri("api/contractors").AbsoluteUri;
+		_contractors = await Http.GetFromJsonAsync<List<Contractor>>(uri) ?? new();
+
+		uri = NavManager.ToAbsoluteUri("api/users").AbsoluteUri;
+		_users = await Http.GetFromJsonAsync<List<UserSelectListData>>(uri) ?? new();
+	}
 
 	protected override async Task OnParametersSetAsync() {
 		if (Id == 0) return;
-		var entity = await DbContext.Goals.Include(e => e.User).Include(e => e.ActiveGoal).Include(e => e.Contractor).FirstOrDefaultAsync(e => e.Id == Id);
+		var url = NavManager.ToAbsoluteUri($"api/goals/{Id}").AbsoluteUri;
+
+		var entity = await Http.GetFromJsonAsync<GoalDetailsData>(url);
 		if (entity is null) return;
 		Name = entity.Name;
-		Contractor = entity.Contractor;
-		User = entity.User;
-		ActiveGoal = entity.ActiveGoal;
+		Contractor = entity.Contractor?.Id;
+		User = entity.User?.Id;
+		ActiveGoalId = entity.ActiveGoalId;
+		StateHasChanged();
 	}
 
 	private async Task Save() {
-		if (User is null) return;
 		if (Name is null) return;
 
 		object request;
 		string uri;
 
 		if(Id == 0) {
-			request = new GoalCreationData(Name, User.Id);
+			request = new GoalCreationData(Name, _userId);
 
 			uri = "api/goals/save";
 		}
 		else {
-			request = new GoalHeaderChangesSaveData(Id, User.Id, Name, Contractor?.Id);
+			if (User is null) return;
+			int? contractorId = Contractor; 
+			request = new GoalHeaderChangesSaveData(Id, User, Name, contractorId);
 
 			uri = "api/goals/save/header";
 		}

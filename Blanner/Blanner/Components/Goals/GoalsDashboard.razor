@@ -240,7 +240,6 @@
 
 
     private async Task OnActiveGoalHeaderEdited(int goalId, string userId, ActiveGoalHeaderData data) {
-        if (_userId != userId) return;
         bool changed = false;
         if (ActiveGoalEditFormModel.Id == goalId) {
             ActiveGoalEditFormModel.Set(data);
@@ -252,7 +251,6 @@
     }
 
     private async Task OnGoalHeaderEdited(int goalId, string userId, GoalHeaderData data) {
-        if (_userId != userId) return;
         bool changed = false;
         if (ActiveGoalEditFormModel.Id == goalId) {
             ActiveGoalEditFormModel.Set(data);
@@ -264,8 +262,6 @@
     }
 
     private async Task OnGoalActivated(int goalId, int activeGoalId, string userId, ActiveGoalData data) {
-        if (_userId != userId) return;
-
         bool changed = false;
 
         if (ActiveGoalEditFormModel.Id != goalId) {
@@ -277,7 +273,6 @@
     }
 
     private async Task OnGoalDeleted(int goalId, string userId) {
-        if (_userId != userId) return;
         if (ActiveGoalEditFormModel.GoalId == goalId) {
             ActiveGoalEditFormModel = ActiveGoalEditForm.Create();
         }
@@ -286,7 +281,6 @@
     }
 
     private async Task OnActiveGoalDeleted(int goalId, string userId) {
-        if (_userId != userId) return;
         if (ActiveGoalEditFormModel.GoalId == goalId) {
             ActiveGoalEditFormModel = ActiveGoalEditForm.Create();
         }
@@ -295,7 +289,6 @@
     }
 
     private async Task OnActiveGoalTimerDeleted(int goalId, int timerId, string userId, TimeSpan goalTotalTime) {
-        if (_userId != userId) return;
         if (ActiveGoalEditFormModel.Id != goalId) return;
 
         ActiveGoalTimeData? goalTime = ActiveGoalEditFormModel.GoalTime.Find(x => x.Id == timerId);
@@ -307,7 +300,6 @@
     }
 
     private async Task OnActiveGoalTimerCreated(int goalId, string userId, ActiveGoalTimeData timerData, TimeSpan _) {
-        if (_userId != userId) return;
         if (ActiveGoalEditFormModel.Id != goalId) return;
 
         ActiveGoalTimeData? goalTime = ActiveGoalEditFormModel.GoalTime.Find(x => x.Id == timerData.Id);
@@ -320,7 +312,6 @@
     }
 
     private async Task OnActiveGoalTimerEdited(int goalId, string userId, ActiveGoalTimeData timerData, TimeSpan _) {
-        if (_userId != userId) return;
         if (ActiveGoalEditFormModel.Id != goalId) return;
 
         ActiveGoalTimeData? goalTime = ActiveGoalEditFormModel.GoalTime.Find(x => x.Id == timerData.Id);
@@ -336,7 +327,6 @@
     }
 
     private async Task OnActiveGoalTimerStopped(int goalId, string userId, TimeSpan _) {
-        if (_userId != userId) return;
         if (ActiveGoalEditFormModel.Id != goalId) return;
 
         ActiveGoalEditFormModel.ActiveTimerId = null;
@@ -345,15 +335,10 @@
     }
 
     private async Task OnJobsBuilded(string userId) {
-        if (_userId != userId) return;
-
         if (ActiveGoalEditFormModel.IsEmpty) return;
 
         ActiveGoalEditFormModel = ActiveGoalEditForm.Create();
 
         await InvokeAsync(StateHasChanged);
     }
-
-
-   
 }
