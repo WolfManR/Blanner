@@ -1,5 +1,7 @@
-﻿namespace Blanner.Extensions;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Blanner.Extensions;
 
 public static class DefaultTypesExtensions {
-	public static bool NullOrEmpty(this string value) => string.IsNullOrEmpty(value);
+	public static bool NullOrEmpty([NotNullWhen(false)]this string? value) => string.IsNullOrEmpty(value);
 }
