@@ -32,6 +32,7 @@ public class GoalDetailsData {
 		Name = data.Name;
 		Contractor = data.Contractor;
 		ActiveGoalId = data.ActiveGoal?.Id;
+		User = data.User;
 		Tasks = data.Tasks;
 	}
 
@@ -39,6 +40,7 @@ public class GoalDetailsData {
 	public string Name { get; set; } = string.Empty;
 	public Contractor? Contractor { get; set; }
 	public int? ActiveGoalId { get; set; }
+	public User? User { get; set; }
 	public List<ToDo> Tasks { get; set; } = [];
 }
 

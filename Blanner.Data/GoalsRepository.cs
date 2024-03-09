@@ -14,7 +14,7 @@ public class GoalsRepository(ApplicationDbContext dbContext) {
 	}
 
 	public Task<Goal> Goal(int goalId) {
-		return _dbContext.Goals.AsNoTracking().Include(x => x.Contractor).Include(x => x.ActiveGoal).FirstAsync(x => x.Id == goalId);
+		return _dbContext.Goals.AsNoTracking().Include(x => x.User).Include(x => x.Contractor).Include(x => x.ActiveGoal).FirstAsync(x => x.Id == goalId);
 	}
 
 	public async ValueTask<Goal?> Save(string userId, string name) {
