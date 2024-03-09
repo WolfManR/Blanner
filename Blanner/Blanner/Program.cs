@@ -6,6 +6,7 @@ using Blanner.Data;
 using Blanner.Data.Models;
 using Blanner.Extensions;
 using Blanner.Hubs;
+using Blanner.Models;
 
 using Coravel;
 using Coravel.Events.Interfaces;
@@ -63,6 +64,7 @@ builder.Services
 builder.Services
 	.AddBlazorContextMenu();
 
+builder.Services.AddScoped<StickyNoteClient>();
 
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
@@ -103,6 +105,7 @@ app.MapAdditionalIdentityEndpoints();
 app.MapRoutes();
 
 app.MapHub<GoalsHub>("/hubs/goals");
+app.MapHub<StickyHub>("/hubs/sticky");
 
 app.Services.SetupCoravel();
 
