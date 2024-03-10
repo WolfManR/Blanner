@@ -1,7 +1,18 @@
-﻿using Blanner.Models;
+﻿using Blanner.Hubs.Clients;
+using Blanner.Models;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Blanner.Hubs;
+
+public interface IStickyNoteHub {
+	Task<List<Note>> LoadNotes();
+	Task CreateNote(double x, double y);
+	Task UpdateNoteText(Guid id, string text);
+	Task<bool> LockNote(Guid id);
+	Task MoveNote(Guid id, double x, double y);
+	Task ClearNotes();
+	Task DeleteNote(Guid id);
+}
 
 public class StickyHub : Hub<IStickyNoteClient>, IStickyNoteHub {
 	public Task<List<Note>> LoadNotes() {

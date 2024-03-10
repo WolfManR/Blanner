@@ -6,6 +6,7 @@ using Blanner.Data;
 using Blanner.Data.Models;
 using Blanner.Extensions;
 using Blanner.Hubs;
+using Blanner.Hubs.Clients;
 using Blanner.Models;
 
 using Coravel;
