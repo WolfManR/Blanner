@@ -9,6 +9,7 @@ public static class ContractorsEndpoints {
         var contractorsGroup = endpoints.MapGroup("/contractors");
 
         contractorsGroup.MapGet("/", ContractorsEndpointsBehaviors.Contractors);
+        contractorsGroup.MapGet("/{contractorId}", ContractorsEndpointsBehaviors.Contractor);
         contractorsGroup.MapPost("/", ContractorsEndpointsBehaviors.Add);
         contractorsGroup.MapPut("/", ContractorsEndpointsBehaviors.Save);
         contractorsGroup.MapDelete("/{contractorId}", ContractorsEndpointsBehaviors.Delete);
@@ -21,7 +22,12 @@ public static class ContractorsEndpointsBehaviors {
         return TypedResults.Json(data);
     }
 
-    public static async Task<IResult> Add([FromBody] ContractorCreateRequest request, [FromServices] ContractorsRepository contractorsRepository) {
+	public static async Task<IResult> Contractor([FromRoute] int contractorId, [FromServices] ContractorsRepository contractorsRepository) {
+		var data = await contractorsRepository.Contractor(contractorId);
+		return TypedResults.Json(data);
+	}
+
+	public static async Task<IResult> Add([FromBody] ContractorCreateRequest request, [FromServices] ContractorsRepository contractorsRepository) {
         Contractor data = await contractorsRepository.Add(request.Name, request.CreatedAt);
 
         return TypedResults.Json(data);

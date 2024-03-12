@@ -10,6 +10,10 @@ public class ContractorsRepository(ApplicationDbContext dbContext) {
 		return _dbContext.Contractors.OrderBy(x => x.Name).AsNoTracking().ToListAsync();
     }
 
+	public Task<Contractor?> Contractor(int contractorId) {
+		return _dbContext.Contractors.AsNoTracking().FirstOrDefaultAsync(x => x.Id == contractorId);
+	}
+
 	public async Task<Contractor> Add(string name, DateTimeOffset createdAt) {
         var existed = await _dbContext.Contractors.FirstOrDefaultAsync(x => x.Name == name);
         if (existed is not null) throw new InvalidOperationException("Trying store existed contractor");
