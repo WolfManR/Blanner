@@ -19,6 +19,7 @@ public class ActiveGoalsRepository(ApplicationDbContext dbContext) {
 			.Include(x => x.GoalTime)
 			.Include(x => x.Tasks)
 			.Include(x => x.Goal)
+			.Include(x => x.User)
 			.FirstAsync(x => x.Id == goalId);
 	}
 

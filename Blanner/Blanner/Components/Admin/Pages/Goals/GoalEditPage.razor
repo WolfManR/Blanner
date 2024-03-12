@@ -45,6 +45,9 @@
 
 <FluentStack>
 	<FluentButton OnClick="Save">Save</FluentButton>
+	@if(ActiveGoalId is not null) {
+		<FluentAnchor Href="@($"/Admin/ActiveGoals/{ActiveGoalId}")">Active</FluentAnchor>
+	}
 </FluentStack>
 
 @code {

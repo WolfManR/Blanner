@@ -79,6 +79,7 @@ public class ActiveGoalDetailsData {
 		Name = data.Name;
 		Comment = data.Comment;
 		Contractor = data.Contractor;
+		User = data.User;
 		GoalId = data.Goal.Id;
 		Tasks = data.Tasks;
 		GoalTime = data.GoalTime.Select(x => new ActiveGoalTimeData(x)).ToList();
@@ -89,6 +90,7 @@ public class ActiveGoalDetailsData {
 	public string Name { get; set; } = string.Empty;
 	public string Comment { get; set; } = string.Empty;
 	public Contractor? Contractor { get; set; }
+	public User? User { get; set; }
 	public int GoalId { get; set; }
 	public List<ToDo> Tasks { get; set; } = [];
 	public List<ActiveGoalTimeData> GoalTime { get; set; } = [];
