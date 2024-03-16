@@ -1,0 +1,175 @@
+﻿@page "/Admin/Jobs/{Id:int}"
+
+@rendermode InteractiveServerNotPrerendered
+
+@inject NavigationManager NavManager
+@inject HttpClient Http
+@inject UserManager<User> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<EditForm FormName="AdminJobEditForm" Model="this">
+	<DataAnnotationsValidator />
+	<FluentValidationSummary />
+
+	<FluentStack Orientation="Orientation.Vertical">
+		<input @bind-value="@Id" hidden />
+
+		<div>
+			<FluentTextField Name="Name" @bind-Value="Name" Label="Name" Style="width: 40rem" Required />
+		</div>
+		<div class="mb-3">
+			<label>
+				Contractor
+				<InputSelect class="form-select" @bind-Value="Contractor" DisplayName="Contractor">
+					<option value="0">Empty</option>
+					@foreach (var item in _contractors) {
+						<option value="@item.Id">@item.Name</option>
+					}
+				</InputSelect>
+			</label>
+		</div>
+
+		<div class="mb-3">
+			<label>
+				User
+				<InputSelect class="form-select" @bind-Value="User" DisplayName="User">
+					<option value="0">Empty</option>
+					@foreach (var item in _users) {
+						<option value="@item.Id">@item.Name</option>
+					}
+				</InputSelect>
+			</label>
+		</div>
+
+		<div>
+		<FluentDatePicker @bind-Value="Start"/>
+		<FluentTimePicker @bind-Value="Start"/>
+		</div>
+
+		<div>
+		<FluentDatePicker @bind-Value="End"/>
+		<FluentTimePicker @bind-Value="End"/>
+		</div>
+
+		<InputTextArea class="form-control" @bind-Value="Comment" style="height:40vh;" DisplayName="Comment" />
+
+		<FluentCheckbox @bind-Value="Marked"/>
+		<InputTextArea class="form-control" @bind-Value="MarkComment" DisplayName="MarkComment" />
+	</FluentStack>
+</EditForm>
+
+<div class="mt-2 mb-1">
+	<table class="table table-bordered">
+		<thead>
+			<tr>
+				<th>Id</th>
+				<th>From</th>
+				<th>To</th>
+				<th>Time</th>
+				<th>
+					@* <div>
+						<button class="btn-lg" @onclick="AddTimeActiveGoal" disabled="@(Id == 0)"><i class="bi bi-plus-square-fill"></i></button>
+					</div> *@
+				</th>
+			</tr>
+		</thead>
+
+		<tbody>
+			@foreach (var item in Time) {
+				<tr>
+					<td>@item.Id</td>
+					<td>@item.Start.ToString("t")</td>
+					<td>@item.End.ToString("t")</td>
+					<td>
+						@* @if (item.Id != ActiveTimerId) {
+							<div>
+								<button class="btn btn-danger" @onclick="() => DeleteTime(item)"><i class="bi bi-trash3"></i></button>
+								<button class="btn btn-info" @onclick="() => EditTimeActiveGoal(item)"><i class="bi bi-pencil-square"></i></button>
+							</div>
+						} *@
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+</div>
+
+<FluentStack>
+	<FluentButton OnClick="Save">Save</FluentButton>
+</FluentStack>
+
+@code {
+	private List<Contractor> _contractors = [];
+	private List<UserSelectListData> _users = [];
+	private string _userId = "";
+
+
+	[Parameter]
+	public int Id { get; set; }
+
+	public string? Name { get; set; }
+	public int? Contractor { get; set; }
+	public string? User { get; set; }
+	public DateTime? Start { get; set; }
+	public DateTime? End { get; set; }
+	public string? Comment { get; set; }
+	public bool Marked { get; set; }
+	public string? MarkComment { get; set; }
+	public List<JobDetailsTimeData> Time { get; set; } = [];
+
+	protected override async Task OnInitializedAsync() {
+		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		_userId = UserManager.GetUserId(state.User) ?? "";
+
+
+		var uri = NavManager.ToAbsoluteUri("api/contractors").AbsoluteUri;
+		_contractors = await Http.GetFromJsonAsync<List<Contractor>>(uri) ?? new();
+
+		uri = NavManager.ToAbsoluteUri("api/users").AbsoluteUri;
+		_users = await Http.GetFromJsonAsync<List<UserSelectListData>>(uri) ?? new();
+	}
+
+	protected override async Task OnParametersSetAsync() {
+		if (Id == 0) return;
+		var url = NavManager.ToAbsoluteUri($"api/jobs/{Id}").AbsoluteUri;
+
+		var entity = await Http.GetFromJsonAsync<JobDetailsData>(url);
+		if (entity is null) return;
+		Name = entity.Name;
+		Contractor = entity.Contractor?.Id;
+		User = entity.User?.Id;
+		Start = entity.Start.LocalDateTime;
+		End = entity.End.LocalDateTime;
+		Comment = entity.Comment;
+		Marked = entity.Marked;
+		MarkComment = entity.MarkComment;
+		Time = entity.Time;
+		StateHasChanged();
+	}
+
+	private async Task Save() {
+		// if (Name is null) return;
+
+		// object request;
+		// string uri;
+
+		// if (Id == 0) {
+		// 	request = new JobCreationData(Name, _userId);
+
+		// 	uri = "api/jobs/save";
+		// }
+		// else {
+		// 	if (User is null) return;
+		// 	int? contractorId = Contractor;
+		// 	request = new JobSaveData(Id, User, Name, contractorId);
+
+		// 	uri = "api/jobs/save";
+		// }
+
+		// var url = NavManager.ToAbsoluteUri(uri).AbsoluteUri;
+
+		// var response = await Http.PostAsJsonAsync(url, request);
+
+		// if (response.IsSuccessStatusCode) NavManager.NavigateTo("/Admin/Jobs");
+	}
+}

@@ -146,6 +146,7 @@ public class JobDetailsData {
 	public DateTimeOffset End { get; set; }
 
 	public Contractor? Contractor { get; set; }
+	public User? User { get; set; }
 	public string Name { get; set; } = string.Empty;
 	public string Comment { get; set; } = string.Empty;
 

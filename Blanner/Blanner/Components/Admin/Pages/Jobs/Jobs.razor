@@ -1,0 +1,107 @@
+﻿@page "/Admin/Jobs"
+
+
+@rendermode InteractiveServer
+
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavManager
+@inject HttpClient Http
+
+<FluentGrid Justify="JustifyContent.SpaceBetween">
+	<FluentGridItem Style="min-width: 200px;">
+		<FluentLabel Typo="Typography.PageTitle">Jobs</FluentLabel>
+	</FluentGridItem>
+	<FluentGridItem Justify="JustifyContent.FlexEnd" Gap="10px">
+		<FluentAnchor Appearance="Appearance.Accent" Href="/Admin/Jobs/0">New</FluentAnchor>
+	</FluentGridItem>
+</FluentGrid>
+
+<FluentDataGrid TGridItem="JobListView" Pagination="_pagination" ItemsProvider="_itemsProvider"
+	GridTemplateColumns=".5fr 1fr 1fr .8fr 2fr 1fr 1fr .5fr 1fr .6fr">
+	<PropertyColumn Property="@(p => p.Id)" Title="№" />
+	<PropertyColumn Property="@(p => p.Start)" Format="dd.MM.yyyy HH:mm" Sortable="true" />
+	<PropertyColumn Property="@(p => p.End)" Format="dd.MM.yyyy HH:mm" Sortable="true" />
+	<PropertyColumn Property="@(p => p.TotalTime)" Format="@(UserSettings.TimeFormatterValue())" Title="Total time" Sortable="true" />
+	<PropertyColumn Property="@(p => p.Name)" Sortable="true" />
+	<PropertyColumn Property="@(p => p.ContractorName)" Title="Contractor" Sortable="true" />
+	<PropertyColumn Property="@(p => p.UserName)" Title="User" Sortable="true" />
+	<TemplateColumn Title="Mark">
+		@if (context.Marked) {
+			<FluentButton IconEnd="@(new Icons.Regular.Size16.Archive())" />
+		}
+	</TemplateColumn>
+	<PropertyColumn Property="@(p => p.MarkComment)" Title="Mark comment"/>
+	<TemplateColumn Title="Actions">
+		<FluentAnchor IconEnd="@(new Icons.Regular.Size16.Edit())" Href="@($"/Admin/Jobs/{context.Id}")" />
+		@* <FluentButton IconEnd="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => Delete(context.Id))" /> *@
+	</TemplateColumn>
+</FluentDataGrid>
+
+<FluentPaginator State="_pagination"/>
+
+@code {
+	class JobListView {
+		public int Id { get; set; }
+		public required string Name { get; set; }
+		public string? ContractorName { get; set; }
+		public string? UserName { get; set; }
+		public required string UserId { get; set; }
+		public DateTimeOffset Start { get; set; }
+		public DateTimeOffset End { get; set; }
+		public TimeSpan TotalTime { get; set; }
+		public bool Marked { get; set; }
+		public string? MarkComment { get; set; }
+	}
+
+	GridItemsProvider<JobListView> _itemsProvider = default!;
+	PaginationState _pagination = new(){ItemsPerPage = 10};
+	public UserSettings? UserSettings { get; set; }
+
+	protected override Task OnInitializedAsync() {
+		_itemsProvider = async req =>
+		{
+			var predata = await DbContext.JobsTime.AsNoTracking()
+				.Include(x => x.User)
+				.Include(x => x.Context).ThenInclude(x => x.Contractor)
+				.ToListAsync();
+
+			var data = predata
+				.Select(x => x.Context).DistinctBy(x => x.Id)
+				.Select(x => new {
+					Context = x,
+					User = DbContext.JobsTime.Include(x => x.Context).Include(x => x.User).Where(t => t.Context == x).Select(x => x.User).First(),
+					Start = DbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.Start).ToList().Min(),
+					End = DbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.End).ToList().Max(),
+					TotalTime = DbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.End - t.Start).ToList()
+				}).ToList();
+
+			var result = data
+				.Select(x => new JobListView {
+						Id = x.Context.Id,
+						Start = x.Start,
+						End = x.End,
+				UserId = x.User != null ? x.User.Id : "",
+				UserName = x.User != null ? x.User.UserName : "",
+						ContractorName = x.Context.Contractor != null ? x.Context.Contractor.Name : "",
+						Name = x.Context.Name,
+						Marked = x.Context.Marked,
+						MarkComment = x.Context.MarkComment,
+						TotalTime = x.TotalTime.Aggregate((cum, t) => cum + t)
+					});
+
+			return GridItemsProviderResult.From(result.Skip(req.StartIndex).Take(req.Count ?? 10).ToList(), data.Count);
+		};
+		return Task.CompletedTask;
+	}
+
+	// private async Task Delete(int Id) {
+	// 	JobDeleteData request = new(Id);
+
+	// 	var url = NavManager.ToAbsoluteUri("api/jobs/delete").AbsoluteUri;
+
+	// 	var response = await Http.PostAsJsonAsync(url, request);
+
+	// 	NavManager.Refresh(true);
+	// }
+
+}
