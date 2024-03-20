@@ -10,6 +10,7 @@ namespace Blanner.Hubs {
 		Task GoalCreated(int goalId, string userId, GoalData data);
 		Task GoalHeaderEdited(int goalId, string userId, GoalHeaderData headerData);
 		Task GoalDeleted(int goalId, string userId);
+		Task ActiveGoalCreated(int activeGoalId, string userId, ActiveGoalData data);
 		Task GoalActivated(int goalId, int activeGoalId, string userId, ActiveGoalData data);
 
 		Task ActiveGoalHeaderEdited(int goalId, string userId, ActiveGoalHeaderData headerData);

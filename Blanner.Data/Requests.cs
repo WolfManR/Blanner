@@ -10,7 +10,7 @@ public sealed record GoalHeaderChangesSaveData(int GoalId, string UserId, string
 public sealed record GoalCreationData(string Name, string UserId);
 public sealed record GoalDeleteData(int GoalId, string UserId);
 public sealed record GoalTimeDeleteData(int GoalId, int TimeId, string UserId);
-public sealed record ActiveGoalHeaderChangesSaveData(int GoalId, string UserId, string Name, int? ContractorId, string Comment);
+public sealed record ActiveGoalHeaderChangesSaveData(int GoalId, string UserId, string Name, int? ContractorId, string Comment, bool CreateGoalOnAssemblingJob);
 public sealed record GoalTimeCreationData(int GoalId, string UserId, DateTimeOffset Start, DateTimeOffset? End, TimeSpan? Time);
 public sealed record GoalTimeEditData(int GoalId, int TimerId, string UserId, DateTimeOffset Start, DateTimeOffset? End, TimeSpan? Time);
 

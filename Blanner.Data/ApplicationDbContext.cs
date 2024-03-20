@@ -1,4 +1,6 @@
 using Blanner.Data.Models;
+
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,25 +19,25 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		base.OnModelCreating(builder);
 
         builder.Entity<Goal>(e => {
-            e.HasOne(x => x.Contractor).WithMany().OnDelete(DeleteBehavior.NoAction);
+            e.HasOne(x => x.User).WithMany().OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.Contractor).WithMany().OnDelete(DeleteBehavior.SetNull);
             e.HasMany(x => x.Tasks).WithOne(x => x.Goal).OnDelete(DeleteBehavior.SetNull);
-            e.HasOne(x => x.ActiveGoal).WithOne(x => x.Goal).OnDelete(DeleteBehavior.SetNull);
-            e.HasOne(x => x.User).WithMany().OnDelete(DeleteBehavior.NoAction);
+            e.HasOne(x => x.ActiveGoal).WithOne(x => x.Goal).HasForeignKey<ActiveGoal>("GoalId").IsRequired(false).OnDelete(DeleteBehavior.SetNull);
 		});
 
         builder.Entity<ActiveGoal>(e => {
-            e.HasOne(x => x.Contractor).WithMany().OnDelete(DeleteBehavior.NoAction);
+			e.HasOne(x => x.User).WithMany().OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.Contractor).WithMany().OnDelete(DeleteBehavior.SetNull);
             e.HasMany(x => x.Tasks).WithOne(x => x.ActiveGoal).OnDelete(DeleteBehavior.SetNull);
-            e.HasOne(x => x.Goal).WithOne(x => x.ActiveGoal).HasForeignKey<ActiveGoal>().OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Goal).WithOne(x => x.ActiveGoal).HasForeignKey<Goal>("ActiveGoalId").IsRequired(false).OnDelete(DeleteBehavior.SetNull);
             e.HasMany(x => x.GoalTime).WithOne(x => x.ActiveGoal).OnDelete(DeleteBehavior.SetNull);
-			e.HasOne(x => x.User).WithMany().OnDelete(DeleteBehavior.NoAction);
 		});
 
         builder.Entity<ToDo>(e => {
-            e.HasOne(x => x.ActiveGoal).WithMany(x => x.Tasks).OnDelete(DeleteBehavior.NoAction);
-            e.HasOne(x => x.Goal).WithMany(x => x.Tasks).OnDelete(DeleteBehavior.NoAction);
-                e.HasOne(x => x.User).WithMany().OnDelete(DeleteBehavior.NoAction);
-            });
+            e.HasOne(x => x.ActiveGoal).WithMany(x => x.Tasks).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.Goal).WithMany(x => x.Tasks).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.User).WithMany().OnDelete(DeleteBehavior.SetNull);
+        });
 
         builder.Entity<ActiveGoalTime>(e => {
             e.HasOne(x => x.ActiveGoal).WithMany(x => x.GoalTime).OnDelete(DeleteBehavior.Cascade);
@@ -50,11 +52,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         builder.Entity<JobContext>(e => {
             e.HasOne(x => x.Contractor).WithMany().OnDelete(DeleteBehavior.NoAction);
             e.HasMany<JobTime>().WithOne(x => x.Context).OnDelete(DeleteBehavior.Cascade);
-            });
+        });
 
         builder.Entity<JobTime>(e => {
             e.HasOne(x => x.Context).WithMany().OnDelete(DeleteBehavior.Cascade);
-                e.HasOne(x => x.User).WithMany().OnDelete(DeleteBehavior.NoAction);
-            });
+            e.HasOne(x => x.User).WithMany().OnDelete(DeleteBehavior.NoAction);
+        });
 	}
 }

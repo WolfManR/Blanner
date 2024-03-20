@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace SQLServerMigrations.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240129194733_Init")]
+    [Migration("20240317172450_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace SQLServerMigrations.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.1")
+                .HasAnnotation("ProductVersion", "8.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -28,7 +28,10 @@ namespace SQLServerMigrations.Migrations
             modelBuilder.Entity("Blanner.Data.Models.ActiveGoal", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Comment")
                         .IsRequired()
@@ -37,10 +40,16 @@ namespace SQLServerMigrations.Migrations
                     b.Property<int?>("ContractorId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("CreateGoalOnAssemblingJob")
+                        .HasColumnType("bit");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<int?>("CurrentlyActiveTime")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("GoalId")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
@@ -117,6 +126,9 @@ namespace SQLServerMigrations.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("ActiveGoalId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("ContractorId")
                         .HasColumnType("int");
 
@@ -134,6 +146,10 @@ namespace SQLServerMigrations.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ActiveGoalId")
+                        .IsUnique()
+                        .HasFilter("[ActiveGoalId] IS NOT NULL");
 
                     b.HasIndex("ContractorId");
 
@@ -442,20 +458,12 @@ namespace SQLServerMigrations.Migrations
                         .HasForeignKey("ContractorId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("Blanner.Data.Models.Goal", "Goal")
-                        .WithOne("ActiveGoal")
-                        .HasForeignKey("Blanner.Data.Models.ActiveGoal", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Blanner.Data.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Contractor");
-
-                    b.Navigation("Goal");
 
                     b.Navigation("User");
                 });
@@ -473,6 +481,11 @@ namespace SQLServerMigrations.Migrations
 
             modelBuilder.Entity("Blanner.Data.Models.Goal", b =>
                 {
+                    b.HasOne("Blanner.Data.Models.ActiveGoal", "ActiveGoal")
+                        .WithOne("Goal")
+                        .HasForeignKey("Blanner.Data.Models.Goal", "ActiveGoalId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Blanner.Data.Models.Contractor", "Contractor")
                         .WithMany()
                         .HasForeignKey("ContractorId")
@@ -481,7 +494,9 @@ namespace SQLServerMigrations.Migrations
                     b.HasOne("Blanner.Data.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ActiveGoal");
 
                     b.Navigation("Contractor");
 
@@ -521,17 +536,17 @@ namespace SQLServerMigrations.Migrations
                     b.HasOne("Blanner.Data.Models.ActiveGoal", "ActiveGoal")
                         .WithMany("Tasks")
                         .HasForeignKey("ActiveGoalId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Blanner.Data.Models.Goal", "Goal")
                         .WithMany("Tasks")
                         .HasForeignKey("GoalId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Blanner.Data.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("ActiveGoal");
 
@@ -593,6 +608,8 @@ namespace SQLServerMigrations.Migrations
 
             modelBuilder.Entity("Blanner.Data.Models.ActiveGoal", b =>
                 {
+                    b.Navigation("Goal");
+
                     b.Navigation("GoalTime");
 
                     b.Navigation("Tasks");
@@ -600,8 +617,6 @@ namespace SQLServerMigrations.Migrations
 
             modelBuilder.Entity("Blanner.Data.Models.Goal", b =>
                 {
-                    b.Navigation("ActiveGoal");
-
                     b.Navigation("Tasks");
                 });
 #pragma warning restore 612, 618

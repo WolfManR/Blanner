@@ -34,33 +34,45 @@ public class ActiveGoalsRepository(ApplicationDbContext dbContext) {
 	public async Task<TimeSpan> TotalTime(int goalId) {
 		var goalTime = await _dbContext.ActiveGoalsTime.Include(x => x.ActiveGoal).Where(x => x.ActiveGoal.Id == goalId).Select(x => x.End - x.Start).ToListAsync();
 
-            return goalTime?.Count > 0 ? goalTime.Aggregate((cum, t) => cum + t) : TimeSpan.Zero;
+		return goalTime?.Count > 0 ? goalTime.Aggregate((cum, t) => cum + t) : TimeSpan.Zero;
 	}
 
-	public async Task<ActiveGoal> Update(int goalId, string name, int? contractorId, string comment) {
+	public async Task<ActiveGoal> Create(string name, string userId) {
+		User? user = await _dbContext.Users.FindAsync(userId) ?? throw new InvalidOperationException("User not existed");
+
+		ActiveGoal goal = new() { Name = name, User = user };
+		_dbContext.ActiveGoals.Add(goal);
+		await _dbContext.SaveChangesAsync();
+
+		return goal;
+	}
+
+	public async Task<ActiveGoal> Update(ActiveGoalHeaderChangesSaveData data) {
 		ActiveGoal goal = await _dbContext.ActiveGoals
 			.Include(x => x.Contractor)
-			.Include(x => x.Goal).ThenInclude(x => x.Contractor)
-			.FirstAsync(x => x.Id == goalId);
+			.Include(x => x.Goal).ThenInclude(x => x!.Contractor)
+			.FirstAsync(x => x.Id == data.GoalId);
 
-		goal.Name = name;
-		goal.Goal.Name = name;
+		goal.Name = data.Name;
+		goal.Comment = data.Comment;
+		goal.CreateGoalOnAssemblingJob = data.CreateGoalOnAssemblingJob;
 
-		goal.Comment = comment;
-
-		switch (goal.Contractor is null, contractorId is null) {
+		switch (goal.Contractor is null, data.ContractorId is null) {
 			case (false, true):
 				goal.Contractor = null;
-				goal.Goal.Contractor = null;
 				break;
-			case (_, false) when (goal.Contractor?.Id != contractorId):
-				Contractor? contractor = await _dbContext.Contractors.FindAsync(contractorId);
+			case (_, false) when (goal.Contractor?.Id != data.ContractorId):
+				Contractor? contractor = await _dbContext.Contractors.FindAsync(data.ContractorId);
 				if (contractor is null) break;
 				goal.Contractor = contractor;
-				goal.Goal.Contractor = contractor;
 				break;
 			default:
 				break;
+		}
+
+		if (goal.Goal is not null) {
+			goal.Goal.Name = data.Name;
+			goal.Goal.Contractor = goal.Contractor;
 		}
 
 		await _dbContext.SaveChangesAsync();
@@ -77,7 +89,7 @@ public class ActiveGoalsRepository(ApplicationDbContext dbContext) {
 
 		await using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
-		var tasks = goal.Tasks.ExceptBy(goal.Goal.Tasks.Select(x => x.Id), x => x.Id).ToList();
+		var tasks = goal.Tasks.ExceptBy(goal.Goal is null ? [] : goal.Goal.Tasks.Select(x => x.Id), x => x.Id).ToList();
 		_dbContext.RemoveRange(tasks);
 		_dbContext.Remove(goal);
 
@@ -144,12 +156,12 @@ public class ActiveGoalsRepository(ApplicationDbContext dbContext) {
 		DateTimeOffset StartTime = data.Start;
 		DateTimeOffset EndTime = DateTimeOffset.MinValue;
 
-            if (data.End.HasValue) {
+		if (data.End.HasValue) {
 			EndTime = data.End.Value;
-            }
-            else if(data.Time.HasValue) {
-                EndTime = StartTime + data.Time.Value;
-            }
+		}
+		else if (data.Time.HasValue) {
+			EndTime = StartTime + data.Time.Value;
+		}
 		else {
 			return null;
 		}
@@ -160,9 +172,9 @@ public class ActiveGoalsRepository(ApplicationDbContext dbContext) {
 		//	.Where(x => x.ActiveGoal.Id == data.GoalId)
 		//	.AnyAsync(x => x.Start <= EndTime && x.End >= StartTime);
 
-   //         if (intersectedValuesExists) return null;
+		//if (intersectedValuesExists) return null;
 
-            ActiveGoal goal = await _dbContext.ActiveGoals.Include(x=>x.GoalTime).FirstAsync(x => x.Id == data.GoalId);
+        ActiveGoal goal = await _dbContext.ActiveGoals.Include(x=>x.GoalTime).FirstAsync(x => x.Id == data.GoalId);
 
 		ActiveGoalTime goalTime = new() {
 			ActiveGoal = goal,
@@ -172,7 +184,7 @@ public class ActiveGoalsRepository(ApplicationDbContext dbContext) {
 
 		goal.GoalTime.Add(goalTime);
 
-            await _dbContext.SaveChangesAsync();
+		await _dbContext.SaveChangesAsync();
 
 		return (goalTime, goal.TotalTime());
 	}
@@ -182,12 +194,12 @@ public class ActiveGoalsRepository(ApplicationDbContext dbContext) {
 		DateTimeOffset StartTime = data.Start;
 		DateTimeOffset EndTime = DateTimeOffset.MinValue;
 
-            if (data.End.HasValue) {
+		if (data.End.HasValue) {
 			EndTime = data.End.Value;
-            }
-            else if(data.Time.HasValue) {
-                EndTime = StartTime + data.Time.Value;
-            }
+		}
+		else if (data.Time.HasValue) {
+			EndTime = StartTime + data.Time.Value;
+		}
 		else {
 			return null;
 		}
@@ -198,17 +210,17 @@ public class ActiveGoalsRepository(ApplicationDbContext dbContext) {
 		//	.Where(x => x.ActiveGoal.Id == data.GoalId)
 		//	.AnyAsync(x => x.Start <= EndTime && x.End >= StartTime);
 
-   //         if (intersectedValuesExists) return null;
+		//         if (intersectedValuesExists) return null;
 
-            ActiveGoalTime goalTime = await _dbContext.ActiveGoalsTime
-			.Include(x=>x.ActiveGoal).ThenInclude(x=>x.GoalTime)
-			.Where(x=> x.ActiveGoal.Id == data.GoalId)
-			.FirstAsync(x => x.Id == data.TimerId);
+		ActiveGoalTime goalTime = await _dbContext.ActiveGoalsTime
+		.Include(x => x.ActiveGoal).ThenInclude(x => x.GoalTime)
+		.Where(x => x.ActiveGoal.Id == data.GoalId)
+		.FirstAsync(x => x.Id == data.TimerId);
 
 		goalTime.Start = StartTime;
 		goalTime.End = EndTime;
 
-            await _dbContext.SaveChangesAsync();
+		await _dbContext.SaveChangesAsync();
 
 		return (goalTime, goalTime.ActiveGoal.TotalTime());
 	}

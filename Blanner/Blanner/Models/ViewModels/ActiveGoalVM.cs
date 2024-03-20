@@ -9,7 +9,7 @@ public class ActiveGoalVM() {
 	public string Name { get; set; } = string.Empty;
 	public string Comment { get; set; } = string.Empty;
 	public Contractor? Contractor { get; set; }
-	public int GoalId { get; set; }
+	public int? GoalId { get; set; }
 	// ToDo
 	public TimeSpan TotalElapsedTime { get; set; }
 	public TimeSpan TimerTime { get; set; }

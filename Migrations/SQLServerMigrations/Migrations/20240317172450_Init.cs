@@ -172,27 +172,32 @@ namespace SQLServerMigrations.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Goals",
+                name: "ActiveGoals",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Comment = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreateGoalOnAssemblingJob = table.Column<bool>(type: "bit", nullable: false),
+                    CurrentlyActiveTime = table.Column<int>(type: "int", nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     ContractorId = table.Column<int>(type: "int", nullable: true),
+                    GoalId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Goals", x => x.Id);
+                    table.PrimaryKey("PK_ActiveGoals", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Goals_AspNetUsers_UserId",
+                        name: "FK_ActiveGoals_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
-                        name: "FK_Goals_Contractors_ContractorId",
+                        name: "FK_ActiveGoals_Contractors_ContractorId",
                         column: x => x.ContractorId,
                         principalTable: "Contractors",
                         principalColumn: "Id",
@@ -222,38 +227,60 @@ namespace SQLServerMigrations.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ActiveGoals",
+                name: "ActiveGoalsTime",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Start = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    End = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    ActiveGoalId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActiveGoalsTime", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ActiveGoalsTime_ActiveGoals_ActiveGoalId",
+                        column: x => x.ActiveGoalId,
+                        principalTable: "ActiveGoals",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Goals",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Comment = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CurrentlyActiveTime = table.Column<int>(type: "int", nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     ContractorId = table.Column<int>(type: "int", nullable: true),
+                    ActiveGoalId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ActiveGoals", x => x.Id);
+                    table.PrimaryKey("PK_Goals", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ActiveGoals_AspNetUsers_UserId",
+                        name: "FK_Goals_ActiveGoals_ActiveGoalId",
+                        column: x => x.ActiveGoalId,
+                        principalTable: "ActiveGoals",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_Goals_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
-                        name: "FK_ActiveGoals_Contractors_ContractorId",
+                        name: "FK_Goals_Contractors_ContractorId",
                         column: x => x.ContractorId,
                         principalTable: "Contractors",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_ActiveGoals_Goals_Id",
-                        column: x => x.Id,
-                        principalTable: "Goals",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -284,27 +311,6 @@ namespace SQLServerMigrations.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ActiveGoalsTime",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Start = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    End = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    ActiveGoalId = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ActiveGoalsTime", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ActiveGoalsTime_ActiveGoals_ActiveGoalId",
-                        column: x => x.ActiveGoalId,
-                        principalTable: "ActiveGoals",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ToDos",
                 columns: table => new
                 {
@@ -323,17 +329,20 @@ namespace SQLServerMigrations.Migrations
                         name: "FK_ToDos_ActiveGoals_ActiveGoalId",
                         column: x => x.ActiveGoalId,
                         principalTable: "ActiveGoals",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_ToDos_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_ToDos_Goals_GoalId",
                         column: x => x.GoalId,
                         principalTable: "Goals",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateIndex(
@@ -389,6 +398,13 @@ namespace SQLServerMigrations.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Goals_ActiveGoalId",
+                table: "Goals",
+                column: "ActiveGoalId",
+                unique: true,
+                filter: "[ActiveGoalId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Goals_ContractorId",
@@ -465,10 +481,10 @@ namespace SQLServerMigrations.Migrations
                 name: "Jobs");
 
             migrationBuilder.DropTable(
-                name: "ActiveGoals");
+                name: "Goals");
 
             migrationBuilder.DropTable(
-                name: "Goals");
+                name: "ActiveGoals");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");

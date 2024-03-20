@@ -91,7 +91,7 @@ public class GoalsRepository(ApplicationDbContext dbContext) {
 			.Include(x => x.GoalTime)
 			.Include(x => x.Contractor)
 			.Include(x => x.Goal)
-			.FirstOrDefaultAsync(x => x.Goal.Id == goalId);
+			.FirstOrDefaultAsync(x => x.Goal != null && x.Goal.Id == goalId);
 
 		if (activeGoal is not null) return activeGoal;
 

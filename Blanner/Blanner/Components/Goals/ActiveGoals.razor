@@ -9,17 +9,20 @@
 
 <CascadingValue Value="UserSettings">
 	<div>
+		<FluentToolbar>
+			<FluentButton Appearance="Appearance.Outline" OnClick="OpenGoalsDialog">Goals</FluentButton>
+			<FluentButton Appearance="Appearance.Outline" OnClick="() => Complete()">Complete</FluentButton>
+			<FluentButton Appearance="Appearance.Accent" OnClick="() => BuildJob()">Build Job</FluentButton>
+			<FluentButton Appearance="Appearance.Accent" OnClick="() => CreateActiveGoal()">New</FluentButton>
+		</FluentToolbar>
+
 		<div class="goals-table">
 			<div class="goals-table-header row fw-bold align-items-baseline pb-1">
 				<div class="col-2">Total time</div>
 				<div class="col-4">Name</div>
-				<div class="col-2">Elapsed</div>
-				<div class="col-4 justify-content-end">
-					<FluentToolbar>
-						<FluentButton Appearance="Appearance.Outline" OnClick="OpenGoalsDialog">Goals</FluentButton>
-						<FluentButton Appearance="Appearance.Outline" OnClick="() => Complete()">Complete</FluentButton>
-						<FluentButton Appearance="Appearance.Accent" OnClick="() => BuildJob()">Build Job</FluentButton>
-					</FluentToolbar>
+				<div class="col-3">Elapsed</div>
+				<div class="col-3 justify-content-end">
+					
 				</div>
 			</div>
 
@@ -76,6 +79,10 @@
 
 	[Parameter]
 	public EventCallback<int> OnSelected { get; set; }
+
+	[Parameter]
+	public EventCallback OnCreateGoal { get; set; }
+
 	public UserSettings? UserSettings { get; set; }
 
 	protected override async Task OnInitializedAsync() {
@@ -118,6 +125,11 @@
 
 		IDialogReference dialog = await DialogService.ShowPanelAsync<Goals>(parameters);
 		await dialog.Result;
+	}
+
+	private async Task CreateActiveGoal() {
+		if(!OnCreateGoal.HasDelegate) return;
+		await OnCreateGoal.InvokeAsync();
 	}
 
 	private async Task LoadGoals() {

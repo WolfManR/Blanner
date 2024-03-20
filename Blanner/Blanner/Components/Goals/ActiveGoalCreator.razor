@@ -1,0 +1,76 @@
+﻿@rendermode InteractiveServerNotPrerendered
+
+@inject NavigationManager NavManager
+@inject HttpClient Http
+@inject UserManager<User> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="d-flex align-items-center justify-content-between">
+	<div class="btn-group">
+		<FluentButton IconStart="@(new Icons.Regular.Size24.Save())" @onclick="Save">Save</FluentButton>
+		<FluentButton IconStart="@(new Icons.Regular.Size24.Broom())" @onclick="Clear">Clear</FluentButton>
+	</div>
+</div>
+
+<EditForm FormName="AdminActiveGoalEditForm" Model="EditForm">
+	<DataAnnotationsValidator />
+	<FluentValidationSummary />
+
+	<FluentStack Orientation="Orientation.Vertical">
+		<div>
+			<FluentTextField Name="Name" @bind-Value="EditForm.Name" Label="Name" Style="width: 40rem" Required />
+		</div>
+		<div class="mb-3">
+			<label>
+				Contractor
+				<InputSelect class="form-select" @bind-Value="EditForm.Contractor" DisplayName="Contractor">
+					<option value="0">Empty</option>
+					@foreach (var item in _contractors) {
+						<option value="@item.Id">@item.Name</option>
+					}
+				</InputSelect>
+			</label>
+		</div>
+
+		<InputTextArea class="form-control" @bind-Value="EditForm.Comment" style="height:40vh;" DisplayName="Comment" />
+	</FluentStack>
+</EditForm>
+
+@code {
+	private List<Contractor> _contractors = [];
+	private List<UserSelectListData> _users = [];
+	private string _userId = "";
+
+	private UserSettings? UserSettings { get; set; }
+
+	[CascadingParameter]
+	public ActiveGoalEditForm EditForm { get; set; } = new();
+
+	protected override async Task OnInitializedAsync() {
+		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		_userId = UserManager.GetUserId(state.User) ?? "";
+
+
+		var uri = NavManager.ToAbsoluteUri("api/contractors").AbsoluteUri;
+		_contractors = await Http.GetFromJsonAsync<List<Contractor>>(uri) ?? new();
+
+		uri = NavManager.ToAbsoluteUri("api/users").AbsoluteUri;
+		_users = await Http.GetFromJsonAsync<List<UserSelectListData>>(uri) ?? new();
+	}
+
+	private async Task Save() {
+		if (EditForm?.Name is null) return;
+
+		GoalCreationData request = new(EditForm.Name, _userId);
+
+		string uri = "api/goals/active/save";
+
+		var url = NavManager.ToAbsoluteUri(uri).AbsoluteUri;
+
+		var response = await Http.PostAsJsonAsync(url, request);
+	}
+
+	private void Clear() {
+		EditForm.Init();
+	}
+}

@@ -28,6 +28,7 @@ public static class GoalsEndpoints {
         activeGoalsGroup.MapGet("/{goalId}", ActiveGoalsEndpointsBehaviors.Goal);
         activeGoalsGroup.MapPost("/start", ActiveGoalsEndpointsBehaviors.StartTimer);
         activeGoalsGroup.MapPost("/stop", ActiveGoalsEndpointsBehaviors.StopTimer);
+        activeGoalsGroup.MapPost("/create", ActiveGoalsEndpointsBehaviors.CreateGoal);
         activeGoalsGroup.MapPost("/delete", ActiveGoalsEndpointsBehaviors.DeleteGoal);
         activeGoalsGroup.MapPost("/complete", ActiveGoalsEndpointsBehaviors.CompleteJob);
         activeGoalsGroup.MapPost("/save/header", ActiveGoalsEndpointsBehaviors.SaveHeaderChanges);
@@ -135,7 +136,16 @@ public static class ActiveGoalsEndpointsBehaviors {
         return goal is null ? TypedResults.NotFound() : TypedResults.Json(new ActiveGoalDetailsData(goal));
     }
 
-    public static async Task<IResult> DeleteGoal(
+	public static async Task<IResult> CreateGoal(
+		[FromBody] GoalCreationData request,
+		[FromServices] ActiveGoalsRepository goalsRepository,
+		[FromServices] IHubContext<GoalsHub, IGoalsHub> hubContext) {
+		ActiveGoal goal = await goalsRepository.Create(request.UserId, request.Name);
+		await hubContext.Clients.All.ActiveGoalCreated(goal.Id, request.UserId, new ActiveGoalData(goal));
+		return TypedResults.Ok();
+	}
+
+	public static async Task<IResult> DeleteGoal(
         [FromBody] GoalDeleteData request,
         [FromServices] ActiveGoalsRepository goalsRepository,
         [FromServices] IHubContext<GoalsHub, IGoalsHub> hubContext) {
@@ -176,7 +186,7 @@ public static class ActiveGoalsEndpointsBehaviors {
 		[FromServices] ActiveGoalsRepository goalsRepository,
 		[FromServices] IHubContext<GoalsHub, IGoalsHub> hubContext)
 	{
-		ActiveGoal goal = await goalsRepository.Update(request.GoalId, request.Name, request.ContractorId, request.Comment);
+		ActiveGoal goal = await goalsRepository.Update(request);
 
 		ActiveGoalHeaderData data = new(goal.Name, goal.Comment, goal.Contractor);
 		await hubContext.Clients.All.ActiveGoalHeaderEdited(request.GoalId, request.UserId, data);
