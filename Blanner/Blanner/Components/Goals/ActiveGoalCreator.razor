@@ -61,9 +61,9 @@
 	private async Task Save() {
 		if (EditForm?.Name is null) return;
 
-		GoalCreationData request = new(EditForm.Name, _userId);
+		GoalCreationData request = new(EditForm.Name, _userId, EditForm.Contractor, EditForm.Comment);
 
-		string uri = "api/goals/active/save";
+		string uri = "api/goals/active/create";
 
 		var url = NavManager.ToAbsoluteUri(uri).AbsoluteUri;
 

@@ -37,10 +37,12 @@ public class ActiveGoalsRepository(ApplicationDbContext dbContext) {
 		return goalTime?.Count > 0 ? goalTime.Aggregate((cum, t) => cum + t) : TimeSpan.Zero;
 	}
 
-	public async Task<ActiveGoal> Create(string name, string userId) {
-		User? user = await _dbContext.Users.FindAsync(userId) ?? throw new InvalidOperationException("User not existed");
-
-		ActiveGoal goal = new() { Name = name, User = user };
+	public async Task<ActiveGoal> Create(GoalCreationData data) {
+		User? user = await _dbContext.Users.FindAsync(data.UserId) ?? throw new InvalidOperationException("User not existed");
+		
+		ActiveGoal goal = new() { Name = data.Name, User = user, Comment = data.Comment };
+		if (await _dbContext.Contractors.FindAsync(data.ContractorId) is { } contractor) goal.Contractor = contractor;
+		
 		_dbContext.ActiveGoals.Add(goal);
 		await _dbContext.SaveChangesAsync();
 

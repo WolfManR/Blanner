@@ -97,6 +97,7 @@
 		_hubConnection.On<int, string, GoalHeaderData>(nameof(IGoalsHub.GoalHeaderEdited), OnGoalHeaderEdited);
 		_hubConnection.On<int, string>(nameof(IGoalsHub.GoalDeleted), OnGoalDeleted);
 		_hubConnection.On<int, string>(nameof(IGoalsHub.ActiveGoalDeleted), OnActiveGoalDeleted);
+		_hubConnection.On<int, string, ActiveGoalData>(nameof(IGoalsHub.ActiveGoalCreated), OnActiveGoalCreated);
 
 		_hubConnection.On<int, string, TimeSpan>(nameof(IGoalsHub.TimerStopped), OnTimerStopped);
 		_hubConnection.On<int, int, string, TimerEditData>(nameof(IGoalsHub.TimerEdited), OnTimerEdited);
@@ -271,6 +272,25 @@
 		if (goal is null) return;
 
 		goal.TotalElapsedTime = data.Time;
+
+		await InvokeAsync(StateHasChanged);
+	}
+
+	private async Task OnActiveGoalCreated(int activeGoalId, string userId, ActiveGoalData data) {
+		ActiveGoalVM? goal = _goals.Find(x => x.Id == activeGoalId);
+		if (goal is null) {
+			goal = new(data);
+			_goals.Insert(0, goal);
+			Value<Contractor, int> contractor = new(data.Contractor);
+			List<ActiveGoalVM>? activeGoals;
+			if (!_goalsGroups.TryGetValue(contractor, out activeGoals)) {
+				_goalsGroups.Add(contractor, activeGoals ??= new());
+			}
+			activeGoals.Insert(0, goal);
+		}
+		else {
+			goal.SetActiveData(data);
+		}
 
 		await InvokeAsync(StateHasChanged);
 	}

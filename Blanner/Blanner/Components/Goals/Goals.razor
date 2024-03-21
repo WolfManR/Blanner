@@ -129,7 +129,7 @@
 
 	private async Task CreateGoal(EditContext editContext) {
 		if (_userId.NullOrEmpty()) return;
-		GoalCreationData request = new(NewGoal.Name, _userId);
+		GoalCreationData request = new(NewGoal.Name, _userId, null);
 
 		var url = NavManager.ToAbsoluteUri("api/goals/save").AbsoluteUri;
 

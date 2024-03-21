@@ -140,7 +140,7 @@ public static class ActiveGoalsEndpointsBehaviors {
 		[FromBody] GoalCreationData request,
 		[FromServices] ActiveGoalsRepository goalsRepository,
 		[FromServices] IHubContext<GoalsHub, IGoalsHub> hubContext) {
-		ActiveGoal goal = await goalsRepository.Create(request.UserId, request.Name);
+		ActiveGoal goal = await goalsRepository.Create(request);
 		await hubContext.Clients.All.ActiveGoalCreated(goal.Id, request.UserId, new ActiveGoalData(goal));
 		return TypedResults.Ok();
 	}

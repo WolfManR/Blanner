@@ -96,7 +96,7 @@
 		string uri;
 
 		if(Id == 0) {
-			request = new GoalCreationData(Name, _userId);
+			request = new GoalCreationData(Name, _userId, Contractor);
 
 			uri = "api/goals/save";
 		}

@@ -110,7 +110,7 @@
 	public int? Contractor { get; set; }
 	public string? User { get; set; }
 	public int? GoalId { get; set; }
-	public string? Comment { get; set; }
+	public string Comment { get; set; } = string.Empty;
 	public int? ActiveTimerId { get; set; }
 	public List<ActiveGoalTimeData> Timers { get; set; } = [];
 
@@ -148,7 +148,7 @@
 		string uri;
 
 		if (Id == 0) {
-			request = new GoalCreationData(Name, _userId);
+			request = new GoalCreationData(Name, _userId, Contractor, Comment);
 
 			uri = "api/goals/active/save";
 		}

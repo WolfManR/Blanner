@@ -7,7 +7,7 @@ public sealed record TimerActivationData(int? GoalId, int? ActiveGoalId, DateTim
 public sealed record TimerDeactivationData(int GoalId, string UserId, DateTimeOffset StopDate);
 public sealed record GoalPushToActiveData(int GoalId, string UserId, DateTimeOffset ActivationDate);
 public sealed record GoalHeaderChangesSaveData(int GoalId, string UserId, string Name, int? ContractorId);
-public sealed record GoalCreationData(string Name, string UserId);
+public sealed record GoalCreationData(string Name, string UserId, int? ContractorId, string Comment = "");
 public sealed record GoalDeleteData(int GoalId, string UserId);
 public sealed record GoalTimeDeleteData(int GoalId, int TimeId, string UserId);
 public sealed record ActiveGoalHeaderChangesSaveData(int GoalId, string UserId, string Name, int? ContractorId, string Comment, bool CreateGoalOnAssemblingJob);
