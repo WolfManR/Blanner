@@ -4,13 +4,25 @@
 
 @inject HttpClient Http
 @inject NavigationManager NavManager
+@inject UserManager<User> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Goals</PageTitle>
+<CascadingValue Value="UserSettings">
 
 <FluentSplitter Orientation="Orientation.Horizontal" BarSize="6" Panel1MinSize="50%" Collapsed="@(_sidePanelMode is SidePanelMode.None)">
 
     <Panel1>
-        <ActiveGoals OnSelected="OpenDetails" OnCreateGoal="OpenActiveGoalCreator" />
+        <div>
+            <FluentToolbar>
+                <FluentButton Appearance="Appearance.Outline" OnClick="() => OpenGoals()">Goals</FluentButton>
+                <FluentButton Appearance="Appearance.Outline" OnClick="() => Complete()">Complete</FluentButton>
+                <FluentButton Appearance="Appearance.Accent" OnClick="() => BuildJob()">Build Job</FluentButton>
+                    <FluentButton Appearance="Appearance.Accent" OnClick="() => OpenActiveGoalCreator()">New</FluentButton>
+            </FluentToolbar>
+
+            <ActiveGoals OnSelected="OpenDetails" />
+        </div>
     </Panel1>
 
     <Panel2>
@@ -25,21 +37,28 @@
 				}
 			</CascadingValue>
 
+            @if (_sidePanelMode is SidePanelMode.GoalsList) {
+                <Goals />
+            }
 
         </FluentCard>
     </Panel2>
-    
-</FluentSplitter>
+
+    </FluentSplitter>
+</CascadingValue>
 
 @code {
     private HubConnection? _hubConnection;
-
-    private ActiveGoalEditor? _activeGoalEditorRef;
+    private string _userId = "";
 
     private SidePanelMode _sidePanelMode = SidePanelMode.GoalsList;
     private ActiveGoalEditForm EditForm { get; set; } = new();
+    public UserSettings? UserSettings { get; set; }
 
     protected override async Task OnInitializedAsync() {
+        var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _userId = UserManager.GetUserId(state.User) ?? "";
+
         _hubConnection = new HubConnectionBuilder().WithUrl(NavManager.GoalsHubUri()).Build();
 
         _hubConnection.On<int, string, GoalHeaderData>(nameof(IGoalsHub.GoalHeaderEdited), OnGoalHeaderEdited);
@@ -74,6 +93,30 @@
         _sidePanelMode = SidePanelMode.Create;
         StateHasChanged();
     }
+
+    private void OpenGoals() {
+        EditForm.Init();
+        _sidePanelMode = SidePanelMode.GoalsList;
+        StateHasChanged();
+    }
+
+
+    private async Task Complete() {
+        CompleteJobData request = new(_userId, DateTimeOffset.Now);
+
+        var url = NavManager.ToAbsoluteUri("api/goals/active/complete").AbsoluteUri;
+
+        var response = await Http.PostAsJsonAsync(url, request);
+    }
+
+    private async Task BuildJob() {
+        BuildJobData request = new(_userId, DateTimeOffset.Now);
+
+        var url = NavManager.ToAbsoluteUri("api/jobs/build").AbsoluteUri;
+
+        var response = await Http.PostAsJsonAsync(url, request);
+    }
+
 
 
     private async Task OnActiveGoalHeaderEdited(int goalId, string userId, ActiveGoalHeaderData data) {

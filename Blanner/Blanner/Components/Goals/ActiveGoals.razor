@@ -7,15 +7,7 @@
 @attribute [Authorize]
 @rendermode InteractiveServerNotPrerendered
 
-<CascadingValue Value="UserSettings">
 	<div>
-		<FluentToolbar>
-			<FluentButton Appearance="Appearance.Outline" OnClick="OpenGoalsDialog">Goals</FluentButton>
-			<FluentButton Appearance="Appearance.Outline" OnClick="() => Complete()">Complete</FluentButton>
-			<FluentButton Appearance="Appearance.Accent" OnClick="() => BuildJob()">Build Job</FluentButton>
-			<FluentButton Appearance="Appearance.Accent" OnClick="() => CreateActiveGoal()">New</FluentButton>
-		</FluentToolbar>
-
 		<div class="goals-table">
 			<div class="goals-table-header row fw-bold align-items-baseline pb-1">
 				<div class="col-2">Total time</div>
@@ -68,7 +60,6 @@
 			<Item OnClick="DeleteGoal"><i class="bi bi-trash3"></i> Delete</Item>
 		</ContextMenu>
 	</div>
-</CascadingValue>
 
 @code {
 	private HubConnection? _hubConnection;
@@ -80,9 +71,7 @@
 	[Parameter]
 	public EventCallback<int> OnSelected { get; set; }
 
-	[Parameter]
-	public EventCallback OnCreateGoal { get; set; }
-
+	[CascadingParameter]
 	public UserSettings? UserSettings { get; set; }
 
 	protected override async Task OnInitializedAsync() {
@@ -110,27 +99,6 @@
 		_hubConnection.On<string>(nameof(IGoalsHub.JobsBuilded), OnJobsBuilded);
 
 		await _hubConnection.StartAsync();
-	}
-
-	private async Task OpenGoalsDialog() {
-		DialogParameters parameters = new() {
-				Title = "Goals",
-				PrimaryAction = "Done",
-				SecondaryActionEnabled = false,
-				Width = "40vw",
-				Modal = true,
-				PreventScroll = false,
-				Alignment = HorizontalAlignment.Right,
-				ShowDismiss = true,
-			};
-
-		IDialogReference dialog = await DialogService.ShowPanelAsync<Goals>(parameters);
-		await dialog.Result;
-	}
-
-	private async Task CreateActiveGoal() {
-		if(!OnCreateGoal.HasDelegate) return;
-		await OnCreateGoal.InvokeAsync();
 	}
 
 	private async Task LoadGoals() {
@@ -187,22 +155,6 @@
 		GoalDeleteData request = new(item.Id, _userId);
 
 		var url = NavManager.ToAbsoluteUri("api/goals/active/delete").AbsoluteUri;
-
-		var response = await Http.PostAsJsonAsync(url, request);
-	}
-
-	private async Task Complete() {
-		CompleteJobData request = new(_userId, DateTimeOffset.Now);
-
-		var url = NavManager.ToAbsoluteUri("api/goals/active/complete").AbsoluteUri;
-
-		var response = await Http.PostAsJsonAsync(url, request);
-	}
-
-	private async Task BuildJob() {
-		BuildJobData request = new(_userId, DateTimeOffset.Now);
-
-		var url = NavManager.ToAbsoluteUri("api/jobs/build").AbsoluteUri;
 
 		var response = await Http.PostAsJsonAsync(url, request);
 	}

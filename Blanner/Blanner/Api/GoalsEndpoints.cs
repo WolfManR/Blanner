@@ -102,7 +102,7 @@ public static class GoalsEndpointsBehaviors {
 		[FromServices] IHubContext<GoalsHub, IGoalsHub> hubContext) 
 	{
 		ActiveGoal activeGoal = await goalsRepository.Activate(request.GoalId, request.ActivationDate);
-		await hubContext.Clients.All.GoalActivated(activeGoal.Goal.Id, activeGoal.Id, request.UserId, new(activeGoal));
+		await hubContext.Clients.All.GoalActivated(request.GoalId, activeGoal.Id, request.UserId, new(activeGoal));
 		return TypedResults.Ok();
 	}
 	public static async Task<IResult> SaveHeaderChanges(
@@ -164,7 +164,7 @@ public static class ActiveGoalsEndpointsBehaviors {
 
 		ActiveGoal goal = await activeGoalsRepository.StartTimer(request.ActiveGoalId.Value, request.ActivationDate);
 
-		await goalsHubContext.Clients.All.GoalActivated(goal.Goal.Id, goal.Id, request.UserId, new(goal));
+		await goalsHubContext.Clients.All.GoalActivated(goal.Goal?.Id ?? 0, goal.Id, request.UserId, new(goal));
 
 		return TypedResults.Ok();
 	}
