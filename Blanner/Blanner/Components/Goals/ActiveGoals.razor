@@ -7,38 +7,41 @@
 @attribute [Authorize]
 @rendermode InteractiveServerNotPrerendered
 
-	<div>
-		<div class="goals-table">
-			<div class="goals-table-header row fw-bold align-items-baseline pb-1">
-				<div class="col-2">Total time</div>
-				<div class="col-4">Name</div>
-				<div class="col-3">Elapsed</div>
-				<div class="col-3 justify-content-end">
-					
-				</div>
+<div>
+	<div class="goals-table">
+		<div class="goals-table-header row fw-bold align-items-baseline pb-1">
+			<div class="col-2">Total time</div>
+			<div class="col-4">Name</div>
+			<div class="col-3">Elapsed</div>
+			<div class="col-3 justify-content-end">
 			</div>
+		</div>
 
-			<div class="goals-table-body">
-				@foreach (var (key, value) in _goalsGroups) {
-					@if (value.Count > 0) {
-						Contractor? keyValue = key;
+		<div class="goals-table-body">
+			@foreach (var (key, value) in _goalsGroups) {
+				@if (value.Count > 0) {
+					Contractor? keyValue = key;
 
-						<div class="row goals-table-item item-header align-items-baseline">
-							<div class="col-9 fw-bold">@(keyValue?.Name ?? "Others")</div>
-							<div class="col-3 d-flex justify-content-end">
-								<button class="btn btn-danger" @onclick="() => DeleteContractorGroup(key)" disabled><i class="bi bi-trash3"></i></button>
-							</div>
+					<div class="row goals-table-item item-header align-items-baseline">
+						<div class="col-9 fw-bold">@(keyValue?.Name ?? "Others")</div>
+						<div class="col-3 d-flex justify-content-end">
+							<button class="btn btn-danger" @onclick="() => DeleteContractorGroup(key)" disabled><i class="bi bi-trash3"></i></button>
 						</div>
+					</div>
 
-						@foreach (var item in value) {
-							<ActiveGoalRow Goal="item">
-								<RowTemplate>
-									<ContextMenuTrigger WrapperTag="div" MenuId="ActiveGoalsContextMenu" Data="@context">
-										<div class="row goals-table-item item align-items-baseline" @onclick="() => SelectGoal(context)">
-											<div class="col-2">@context.TotalElapsedTime.ToString(UserSettings.TimeFormatterValue())</div>
-											<div class="col-4">@context.Name</div>
-											<div class="col-3">@context.TimerTime.ToString(UserSettings.DetailedTimeFormatterValue())</div>
-											<div class="col-3 d-flex justify-content-end">
+					@foreach (var item in value) {
+						<ActiveGoalRow Goal="item">
+							<RowTemplate>
+								<ContextMenuTrigger MenuId="ActiveGoalsContextMenu" Data="@context">
+									<div class="row goals-table-item item align-items-baseline" @onclick="() => SelectGoal(context)">
+										<div class="col-2">@context.TotalElapsedTime.ToString(UserSettings.TimeFormatterValue())</div>
+										<div class="col-4">@context.Name</div>
+										<div class="col-3">@context.TimerTime.ToString(UserSettings.DetailedTimeFormatterValue())</div>
+										<div class="col-3 d-flex justify-content-end">
+											<div class="btn-group">
+												@if (context.GoalId is not null) {
+													<button class="btn btn-outline-secondary" @onclick="() => OpenGoal(context.GoalId)" @onclick:stopPropagation="true"><i class="bi bi-link"></i></button>
+												}
 												@if (context.Tick) {
 													<button class="btn btn-danger" @onclick="() => StopGoal(context)" @onclick:stopPropagation="true"><i class="bi bi-stop-circle"></i></button>
 												}
@@ -47,19 +50,21 @@
 												}
 											</div>
 										</div>
-									</ContextMenuTrigger>
-								</RowTemplate>
-							</ActiveGoalRow>
-						}
+									</div>
+								</ContextMenuTrigger>
+							</RowTemplate>
+						</ActiveGoalRow>
 					}
 				}
-			</div>
+			}
 		</div>
-
-		<ContextMenu Id="ActiveGoalsContextMenu">
-			<Item OnClick="DeleteGoal"><i class="bi bi-trash3"></i> Delete</Item>
-		</ContextMenu>
 	</div>
+
+	<ContextMenu Id="ActiveGoalsContextMenu">
+		<Item OnClick="DeleteGoal"><i class="bi bi-trash3"></i> Delete</Item>
+		<Item Id="menuitem-persist" OnClick="Persist" OnAppearing="ItemOnAppearingHandler"><i class="bi bi-database-add"></i> Persist</Item>
+	</ContextMenu>
+</div>
 
 @code {
 	private HubConnection? _hubConnection;
@@ -70,6 +75,8 @@
 
 	[Parameter]
 	public EventCallback<int> OnSelected { get; set; }
+	[Parameter]
+	public EventCallback<int> OnOpenGoal { get; set; }
 
 	[CascadingParameter]
 	public UserSettings? UserSettings { get; set; }
@@ -87,6 +94,7 @@
 		_hubConnection.On<int, string>(nameof(IGoalsHub.GoalDeleted), OnGoalDeleted);
 		_hubConnection.On<int, string>(nameof(IGoalsHub.ActiveGoalDeleted), OnActiveGoalDeleted);
 		_hubConnection.On<int, string, ActiveGoalData>(nameof(IGoalsHub.ActiveGoalCreated), OnActiveGoalCreated);
+		_hubConnection.On<int, string, GoalData>(nameof(IGoalsHub.GoalCreated), OnGoalCreated);
 
 		_hubConnection.On<int, string, TimeSpan>(nameof(IGoalsHub.TimerStopped), OnTimerStopped);
 		_hubConnection.On<int, int, string, TimerEditData>(nameof(IGoalsHub.TimerEdited), OnTimerEdited);
@@ -99,6 +107,15 @@
 		_hubConnection.On<string>(nameof(IGoalsHub.JobsBuilded), OnJobsBuilded);
 
 		await _hubConnection.StartAsync();
+	}
+
+	private void ItemOnAppearingHandler(ItemAppearingEventArgs e) {
+		if (e.Data is not ActiveGoalVM item) return;
+		switch (e.MenuItem.Id) {
+			case "menuitem-persist":
+				e.IsEnabled = item.GoalId is null;
+				break;
+		}
 	}
 
 	private async Task LoadGoals() {
@@ -125,6 +142,19 @@
 
 	private async Task SelectGoal(ActiveGoalVM item) {
 		if (OnSelected.HasDelegate) await OnSelected.InvokeAsync(item.Id);
+	}
+
+	private async Task OpenGoal(int? goalId) {
+		if (goalId.HasValue && OnOpenGoal.HasDelegate) await OnOpenGoal.InvokeAsync(goalId.Value);
+	}
+
+	private async Task Persist(ItemClickEventArgs e) {
+		if (e.Data is not ActiveGoalVM { GoalId: null } item) return;
+		ActiveGoalPersistData request = new(item.Id, _userId);
+
+		var url = NavManager.ToAbsoluteUri("api/goals/active/persist").AbsoluteUri;
+
+		var response = await Http.PostAsJsonAsync(url, request);
 	}
 
 	private Task DeleteContractorGroup(Value<Contractor, int> groupKey) {
@@ -203,6 +233,16 @@
 				_goalsGroups.TryAdd(new(currentContractor), new() { goal });
 			}
 		}
+
+		await InvokeAsync(StateHasChanged);
+	}
+
+
+	private async Task OnGoalCreated(int goalId, string userId, GoalData data) {
+		ActiveGoalVM? goal = _goals.Find(x => x.Id == data.ActiveGoalId);
+		if (goal is null) return;
+
+		goal.GoalId = data.Id;
 
 		await InvokeAsync(StateHasChanged);
 	}

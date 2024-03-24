@@ -29,6 +29,7 @@ public static class GoalsEndpoints {
         activeGoalsGroup.MapPost("/start", ActiveGoalsEndpointsBehaviors.StartTimer);
         activeGoalsGroup.MapPost("/stop", ActiveGoalsEndpointsBehaviors.StopTimer);
         activeGoalsGroup.MapPost("/create", ActiveGoalsEndpointsBehaviors.CreateGoal);
+        activeGoalsGroup.MapPost("/persist", ActiveGoalsEndpointsBehaviors.PersistGoal);
         activeGoalsGroup.MapPost("/delete", ActiveGoalsEndpointsBehaviors.DeleteGoal);
         activeGoalsGroup.MapPost("/complete", ActiveGoalsEndpointsBehaviors.CompleteJob);
         activeGoalsGroup.MapPost("/save/header", ActiveGoalsEndpointsBehaviors.SaveHeaderChanges);
@@ -68,7 +69,7 @@ public static class GoalsEndpointsBehaviors {
 		await hubContext.Clients.All.GoalCreated(goal.Id, request.UserId, new GoalData(goal));
 		return TypedResults.Ok();
 	}
-	
+
 	public static async Task<IResult> DeleteGoal(
 		[FromBody] GoalDeleteData request,
 		[FromServices] GoalsRepository goalsRepository,
@@ -144,6 +145,17 @@ public static class ActiveGoalsEndpointsBehaviors {
 		await hubContext.Clients.All.ActiveGoalCreated(goal.Id, request.UserId, new ActiveGoalData(goal));
 		return TypedResults.Ok();
 	}
+
+	public static async Task<IResult> PersistGoal(
+		[FromBody] ActiveGoalPersistData request,
+		[FromServices] ActiveGoalsRepository repository,
+		[FromServices] IHubContext<GoalsHub, IGoalsHub> hubContext) {
+		Goal? goal = await repository.Persist(request);
+		if (goal is null) return TypedResults.BadRequest();
+		await hubContext.Clients.All.GoalCreated(goal.Id, request.UserId, new GoalData(goal));
+		return TypedResults.Ok();
+	}
+
 
 	public static async Task<IResult> DeleteGoal(
         [FromBody] GoalDeleteData request,

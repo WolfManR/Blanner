@@ -108,8 +108,8 @@
 
     private async Task SaveActiveGoalChanges() {
         if (GoalEditForm.IsEmpty) return;
-        var (goalId, name, contractorId, comment, createGoalOnAssemblingJob) = GoalEditForm;
-        ActiveGoalHeaderChangesSaveData request = new(goalId, _userId, name, contractorId, comment, createGoalOnAssemblingJob);
+        var (goalId, name, contractorId, comment) = GoalEditForm;
+        ActiveGoalHeaderChangesSaveData request = new(goalId, _userId, name, contractorId, comment);
 
         var url = NavManager.ToAbsoluteUri($"api/goals/active/save/header").AbsoluteUri;
 

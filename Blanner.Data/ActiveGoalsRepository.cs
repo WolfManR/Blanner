@@ -57,7 +57,6 @@ public class ActiveGoalsRepository(ApplicationDbContext dbContext) {
 
 		goal.Name = data.Name;
 		goal.Comment = data.Comment;
-		goal.CreateGoalOnAssemblingJob = data.CreateGoalOnAssemblingJob;
 
 		switch (goal.Contractor is null, data.ContractorId is null) {
 			case (false, true):
@@ -259,5 +258,26 @@ public class ActiveGoalsRepository(ApplicationDbContext dbContext) {
 		List<ActiveGoal> goals = await _dbContext.ActiveGoals.AsNoTracking().Include(x => x.GoalTime).Where(x => goalsId.Contains(x.Id)).ToListAsync();
 
 		return goals;
+	}
+
+	public async Task<Goal?> Persist(ActiveGoalPersistData request) {
+		ActiveGoal? activeGoal = await _dbContext.ActiveGoals.Include(x => x.User).Include(x => x.Goal).Include(x => x.Contractor).FirstOrDefaultAsync(x => x.Id == request.GoalId);
+		if (activeGoal is null) return null;
+		if (activeGoal.Goal is not null) return null;
+
+		Goal goal = new() {
+			Name = activeGoal.Name,
+			Contractor = activeGoal.Contractor,
+			CreatedAt = DateTimeOffset.Now,
+			User = activeGoal.User
+		};
+
+		activeGoal.Goal = goal;
+
+		_dbContext.Update(activeGoal);
+
+		await _dbContext.SaveChangesAsync();
+
+		return goal;
 	}
 }

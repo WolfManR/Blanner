@@ -7,7 +7,6 @@ public class ActiveGoalEditForm() : GoalEditForm {
     public int? GoalId { get; set; }
 
     public string Comment { get; set; } = string.Empty;
-    public bool CreateGoalOnAssemblingJob { get; set; }
 
     public int? ActiveTimerId { get; set; }
 
@@ -27,11 +26,10 @@ public class ActiveGoalEditForm() : GoalEditForm {
         Comment = data.Comment;
     }
 
-    public void Deconstruct(out int id, out string name, out int? contractor, out string comment, out bool createGoalOnAssemblingJob) {
+    public void Deconstruct(out int id, out string name, out int? contractor, out string comment) {
         id = Id;
         name = Name;
         contractor = Contractor;
         comment = Comment;
-        createGoalOnAssemblingJob = CreateGoalOnAssemblingJob;
     }
 }

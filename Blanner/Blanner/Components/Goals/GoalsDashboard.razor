@@ -6,11 +6,12 @@
 @inject NavigationManager NavManager
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IDialogService DialogService
 
 <PageTitle>Goals</PageTitle>
 <CascadingValue Value="UserSettings">
 
-<FluentSplitter Orientation="Orientation.Horizontal" BarSize="6" Panel1MinSize="50%" Collapsed="@(_sidePanelMode is SidePanelMode.None)">
+<FluentSplitter Orientation="Orientation.Horizontal" BarSize="6" Panel1MinSize="30%" Panel2MinSize="20%" Collapsed="@(_sidePanelMode is SidePanelMode.None)">
 
     <Panel1>
         <div>
@@ -21,7 +22,7 @@
                     <FluentButton Appearance="Appearance.Accent" OnClick="() => OpenActiveGoalCreator()">New</FluentButton>
             </FluentToolbar>
 
-            <ActiveGoals OnSelected="OpenDetails" />
+            <ActiveGoals OnSelected="OpenDetails" OnOpenGoal="OpenGoal" />
         </div>
     </Panel1>
 
@@ -38,7 +39,7 @@
 			</CascadingValue>
 
             @if (_sidePanelMode is SidePanelMode.GoalsList) {
-                <Goals />
+                <Goals OnEdit="OpenGoal"/>
             }
 
         </FluentCard>
@@ -98,6 +99,19 @@
         EditForm.Init();
         _sidePanelMode = SidePanelMode.GoalsList;
         StateHasChanged();
+    }
+    
+    private async Task OpenGoal(int id) {
+        DialogParameters parameters = new() {
+                Title = "Goal",
+                Width = "40vw",
+                Modal = true,
+                PreventScroll = true,
+                ShowDismiss = true
+            };
+
+        IDialogReference dialog = await DialogService.ShowDialogAsync<GoalEditor>(new GoalEditParameters(id), parameters);
+        await dialog.Result;
     }
 
 
