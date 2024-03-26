@@ -1,0 +1,77 @@
+﻿@page "/Admin/Contractors/{Id:int}"
+
+@inject NavigationManager NavManager
+@inject HttpClient Http
+@inject UserManager<User> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<EditForm FormName="AdminContractorEditForm" Model="this">
+	<DataAnnotationsValidator />
+	<FluentValidationSummary />
+
+	<FluentStack Orientation="Orientation.Vertical">
+		<input @bind-value="@Id" hidden />
+
+		<div>
+			<FluentTextField Name="Name" @bind-Value="Name" Label="Name" Style="width: 40rem" Required />
+		</div>
+	</FluentStack>
+</EditForm>
+
+<FluentStack>
+	<FluentButton OnClick="Save">Save</FluentButton>
+</FluentStack>
+
+@code {
+	private string _userId = "";
+
+
+	[Parameter]
+	public int Id { get; set; }
+
+	public string? Name { get; set; }
+	public int? Contractor { get; set; }
+	public string? User { get; set; }
+	public int? ActiveGoalId { get; set; }
+
+	protected override async Task OnInitializedAsync() {
+		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		_userId = UserManager.GetUserId(state.User) ?? "";
+	}
+
+	protected override async Task OnParametersSetAsync() {
+		if (Id == 0) return;
+		var url = NavManager.ToAbsoluteUri($"api/contractors/{Id}").AbsoluteUri;
+
+		var entity = await Http.GetFromJsonAsync<GoalDetailsData>(url);
+		if (entity is null) return;
+		Name = entity.Name;
+		StateHasChanged();
+	}
+
+	private async Task Save() {
+		if (Name is null) return;
+
+		object request;
+		string uri;
+		HttpResponseMessage? response;
+		if (Id == 0) {
+			request = new ContractorCreateRequest(Name, DateTimeOffset.Now);
+
+			uri = "api/contractors/save";
+			var url = NavManager.ToAbsoluteUri(uri).AbsoluteUri;
+
+			response = await Http.PostAsJsonAsync(url, request);
+		}
+		else {
+			request = new ContractorEditRequest(Id, Name, DateTimeOffset.Now);
+
+			uri = "api/goals/save/header";
+			var url = NavManager.ToAbsoluteUri(uri).AbsoluteUri;
+
+			response = await Http.PutAsJsonAsync(url, request);
+		}
+
+		if (response.IsSuccessStatusCode) NavManager.NavigateTo("/Admin/Contractors");
+	}
+}
