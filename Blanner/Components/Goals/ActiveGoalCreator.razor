@@ -3,11 +3,12 @@
 @inject HttpClient Http
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILocalization Loc
 
 <div class="d-flex align-items-center justify-content-between">
 	<div class="btn-group">
-		<FluentButton IconStart="@(new Icons.Regular.Size24.Save())" @onclick="Save">Save</FluentButton>
-		<FluentButton IconStart="@(new Icons.Regular.Size24.Broom())" @onclick="Clear">Clear</FluentButton>
+		<FluentButton IconStart="@(new Icons.Regular.Size24.Save())" @onclick="Save">@Loc.BtnSave</FluentButton>
+		<FluentButton IconStart="@(new Icons.Regular.Size24.Broom())" @onclick="Clear">@Loc.BtnClear</FluentButton>
 	</div>
 </div>
 
@@ -17,13 +18,13 @@
 
 	<FluentStack Orientation="Orientation.Vertical">
 		<div>
-			<FluentTextField Name="Name" @bind-Value="EditForm.Name" Label="Name" Style="width: 40rem" Required />
+			<FluentTextField Name="Name" @bind-Value="EditForm.Name" Label="@Loc.NameInputLabel" Style="width: 40rem" Required />
 		</div>
 		<div class="mb-3">
 			<label>
-				Contractor
+				@Loc.ContractorInputLabel
 				<InputSelect class="form-select" @bind-Value="EditForm.Contractor" DisplayName="Contractor">
-					<option value="0">Empty</option>
+					<option value="0">@Loc.OptionEmpty</option>
 					@foreach (var item in _contractors) {
 						<option value="@item.Id">@item.Name</option>
 					}

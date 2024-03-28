@@ -2,25 +2,26 @@
 @inject NavigationManager NavManager
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILocalization Loc
 
 @attribute [Authorize]
 @implements IDialogContentComponent<GoalEditParameters>
 
-<FluentDialogHeader>Goal</FluentDialogHeader>
+<FluentDialogHeader>@Loc.GoalEditorHeader</FluentDialogHeader>
 
 <FluentDialogBody>
 	<EditForm FormName="GoalEditorEditForm" Model="EditForm" class="d-flex flex-column gap-2 mt-3">
 		<DataAnnotationsValidator/>
 
 		<div class="input-group mb-3">
-			<label class="input-group-text">Name</label>
+			<label class="input-group-text">@Loc.NameInputLabel</label>
 			<InputText class="form-control" @bind-Value="EditForm.Name" DisplayName="Name" />
 		</div>
 
 		<div class="input-group mb-3">
-			<label class="input-group-text" for="goalContractorInput">Contractor</label>
+			<label class="input-group-text" for="goalContractorInput">@Loc.ContractorInputLabel</label>
 			<InputSelect class="form-select" @bind-Value="EditForm.Contractor" id="goalContractorInput" DisplayName="Contractor">
-				<option value="0">Empty</option>
+				<option value="0">@Loc.OptionEmpty</option>
 				@foreach (var item in Contractors) {
 					<option value="@item.Id">@item.Name</option>
 				}
@@ -30,8 +31,8 @@
 </FluentDialogBody>
 
 <FluentDialogFooter>
-	<FluentButton Appearance="Appearance.Accent" OnClick="() => SaveGoalChanges(true)" IconStart="@(new Icons.Regular.Size24.Save())">Save and Close</FluentButton>
-	<FluentButton Appearance="Appearance.Outline" OnClick="() => SaveGoalChanges()" IconStart="@(new Icons.Regular.Size24.Save())">Save</FluentButton>
+	<FluentButton Appearance="Appearance.Accent" OnClick="() => SaveGoalChanges(true)" IconStart="@(new Icons.Regular.Size24.Save())">@Loc.BtnSaveAndClose</FluentButton>
+	<FluentButton Appearance="Appearance.Outline" OnClick="() => SaveGoalChanges()" IconStart="@(new Icons.Regular.Size24.Save())">@Loc.BtnSave</FluentButton>
 </FluentDialogFooter>
 
 @code {

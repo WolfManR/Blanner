@@ -1,12 +1,13 @@
 ﻿@page "/"
+@inject ILocalization Loc
 
-<PageTitle>Home</PageTitle>
+<PageTitle>@Loc.HomePageTitle</PageTitle>
 
 <AuthorizeView>
     <Authorized>
         <GoalsDashboard/>
     </Authorized>
     <NotAuthorized>
-        Welcome in new App!
+        @Loc.HomePageWelcome
     </NotAuthorized>
 </AuthorizeView>

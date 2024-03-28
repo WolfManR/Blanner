@@ -4,28 +4,29 @@
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IDialogService DialogService
+@inject ILocalization Loc
 
 @attribute [Authorize]
 
 <div>
 	<EditForm FormName="GoalCreation" Model="NewGoal" OnValidSubmit="CreateGoal">
 		<div class="input-group mb-3">
-			<label class="input-group-text">Name</label>
+			<label class="input-group-text">@Loc.NameInputLabel</label>
 			<InputText class="form-control" @bind-Value="NewGoal.Name" aria-describedby="goalCreateBtn" />
-			<button class="btn btn-primary" id="goalCreateBtn">Create</button>
+			<button class="btn btn-primary" id="goalCreateBtn">@Loc.BtnCreate</button>
 		</div>
 	</EditForm>
 </div>
 
 <div>
-	<EditForm FormName="GoalsFilterForm" Model="FilterForm" Enhance>
+	@* <EditForm FormName="GoalsFilterForm" Model="FilterForm" Enhance>
 		<label for="chbInsertActive">Insert Active</label>
 		<InputCheckbox @bind-Value="FilterForm.IncludeActive" id="chbInsertActive" />
-	</EditForm>
+	</EditForm> *@
 
 	<div class="goals-table">
 		<div class="goals-table-header row fw-bold pb-1 align-items-baseline">
-			<div class="col-10">Name</div>
+			<div class="col-10">@Loc.NameLabel</div>
 			<div class="col-2"></div>
 		</div>
 		<div class="goals-table-body">
@@ -34,7 +35,7 @@
 					Contractor? keyValue = key;
 
 					<div class="row goals-table-item item-header align-items-baseline">
-						<div class="col-10 fw-bold">@(keyValue?.Name ?? "Others")</div>
+						<div class="col-10 fw-bold">@(keyValue?.Name ?? Loc.ContractorNoneName)</div>
 						<div class="col-2 d-flex justify-content-end">
 							<button class="btn btn-danger" @onclick="() => DeleteContractorGroup(key)" disabled><i class="bi bi-trash3"></i></button>
 						</div>

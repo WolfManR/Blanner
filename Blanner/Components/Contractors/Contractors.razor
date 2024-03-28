@@ -2,15 +2,18 @@
 
 @inject HttpClient Http
 @inject NavigationManager NavManager
+@inject ILocalization Loc
 
-<h3>Contractors</h3>
+<PageTitle>@Loc.ContractorsPageTitle</PageTitle>
+
+<h3>@Loc.ContractorsPageTitle</h3>
 
 <div class="w-25">
 	<EditForm FormName="ContractorCreateForm" Model="ContractorCreateModel" OnValidSubmit="CreateContractor">
 		<div class="input-group mb-3">
-			<label class="input-group-text">Name</label>
+			<label class="input-group-text">@Loc.NameInputLabel</label>
 			<InputText class="form-control" @bind-Value="ContractorCreateModel.Name" aria-describedby="contractorCreateBtn" />
-			<button class="btn btn-primary" id="contractorCreateBtn">Add</button>
+			<button class="btn btn-primary" id="contractorCreateBtn">@Loc.BtnAdd</button>
 		</div>
 	</EditForm>
 </div>
@@ -26,7 +29,7 @@
 					<div>
 						<EditForm FormName="ContractorEditForm" Model="item" OnValidSubmit="() => Save(item)">
 							<label>
-								Name
+								@Loc.NameInputLabel
 								<InputText @bind-Value="item.Name" />
 							</label>
 						</EditForm>

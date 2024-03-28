@@ -5,6 +5,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
 @inject IDialogService DialogService
+@inject ILocalization Loc
 
 @attribute [Authorize]
 
@@ -15,16 +16,16 @@
 
 	<div class="form-check form-switch">
 		<input class="form-check-input" type="checkbox" role="switch" id="timesSwitcher" @bind-value="_showTimes" />
-		<label class="form-check-label" for="timesSwitcher">Times</label>
+		<label class="form-check-label" for="timesSwitcher">@Loc.ActiveGoalsTimesLabel</label>
 	</div>
 </div>
 
 <EditForm FormName="ActiveGoalEditForm" Model="GoalEditForm" class="d-flex flex-column gap-2 mt-3">
 	<div class="input-group mb-3">
-		<label class="input-group-text">Contractor</label>
+        <label class="input-group-text">@Loc.ContractorInputLabel</label>
 
 		<InputSelect class="form-select" @bind-Value="GoalEditForm.Contractor" DisplayName="Contractor">
-			<option value="0">Empty</option>
+			<option value="0">@Loc.OptionEmpty</option>
 			@foreach (var item in Contractors) {
 				<option value="@item.Id">@item.Name</option>
 			}
@@ -32,7 +33,7 @@
 	</div>
 
 	<div class="input-group mb-3">
-		<label class="input-group-text">Name</label>
+        <label class="input-group-text">@Loc.NameInputLabel</label>
 		<InputText class="form-control" @bind-Value="GoalEditForm.Name" DisplayName="Name" />
 	</div>
 
@@ -44,10 +45,10 @@
 		<table class="table table-bordered">
 			<thead>
 				<tr>
-					<th>Id</th>
-					<th>From</th>
-					<th>To</th>
-					<th>Time</th>
+					<th>@Loc.IdLabel</th>
+					<th>@Loc.FromTimeLabel</th>
+					<th>@Loc.ToTimeLabel</th>
+					<th>@Loc.TimeLabel</th>
 					<th>
 						<div>
 							<button class="btn-lg" @onclick="AddTimeActiveGoal"><i class="bi bi-plus-square-fill"></i></button>

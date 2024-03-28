@@ -1,5 +1,5 @@
-﻿
-@inject IJSRuntime JS
+﻿@inject IJSRuntime JS
+@inject ILocalization Loc
 
 
 <dialog @ref="_dialogRef" class="time-dialog w-25" id="GoalEditorDialog" @onclose="CloseDialog" @oncancel="CloseDialog">
@@ -23,7 +23,7 @@
 		<div class="d-flex mt-4">
 
 			<form method="dialog">
-				<button class="btn btn-primary" @onclick="SubmitResult">Ok</button>
+				<button class="btn btn-primary" @onclick="SubmitResult">@Loc.BtnOk</button>
 				<button class="btn btn-close"></button>
 			</form>
 

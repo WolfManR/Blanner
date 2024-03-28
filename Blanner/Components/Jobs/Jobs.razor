@@ -4,10 +4,11 @@
 @inject NavigationManager NavManager
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILocalization Loc
 
 @attribute [Authorize]
 
-<PageTitle>Jobs</PageTitle>
+<PageTitle>@Loc.JobsPageTitle</PageTitle>
 
 <div>
 	<div class="row sticky-top w-50 justify-content-start">
@@ -28,7 +29,7 @@
 				<div class="card-body">
 					@foreach (var contractorGroup in group.GroupBy(x => new Value<Contractor, int>(x.Contractor))) {
 						<div>
-							<h3 class="col-3 mb-2 mt-1">@(contractorGroup.Key.StoredValue?.Name ?? "Other")</h3>
+							<h3 class="col-3 mb-2 mt-1">@(contractorGroup.Key.StoredValue?.Name ?? Loc.ContractorNoneName)</h3>
 
 							@foreach (var item in contractorGroup) {
 								<div class="me-2 bg-dark bg-opacity-10 p-2 rounded-2 m-1">

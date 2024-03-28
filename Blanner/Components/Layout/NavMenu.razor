@@ -1,10 +1,11 @@
 ﻿@implements IDisposable
 
 @inject NavigationManager NavigationManager
+@inject ILocalization Loc
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand fw-bold text-uppercase" href="">Blanner</a>
+        <a class="navbar-brand fw-bold text-uppercase" href="">@Loc.NavMenuAppName</a>
     </div>
 </div>
 
@@ -14,7 +15,7 @@
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> @Loc.NavMenuHomePage
             </NavLink>
         </div>
         @*  <div class="nav-item px-3">
@@ -27,22 +28,22 @@
             <Authorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="goals-dashboard">
-                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Goals
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> @Loc.NavMenuGoals
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="contractors">
-                        <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Contractors
+                        <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> @Loc.NavMenuContractors
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="jobs">
-                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Jobs
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> @Loc.NavMenuJobs
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="sticky">
-                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Sticky
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> @Loc.NavMenuSticky
                     </NavLink>
                 </div>
             </Authorized>

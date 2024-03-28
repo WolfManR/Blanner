@@ -6,8 +6,9 @@
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IDialogService DialogService
+@inject ILocalization Loc
 
-<PageTitle>Goals</PageTitle>
+<PageTitle>@Loc.GoalsPageTitle</PageTitle>
 <CascadingValue Value="UserSettings">
 
 <FluentSplitter Orientation="Orientation.Horizontal" BarSize="6" Panel1MinSize="30%" Panel2MinSize="20%" Collapsed="@(_sidePanelMode is SidePanelMode.None)">
@@ -15,10 +16,10 @@
     <Panel1>
         <div>
             <FluentToolbar>
-                <FluentButton Appearance="Appearance.Outline" OnClick="() => OpenGoals()">Goals</FluentButton>
-                <FluentButton Appearance="Appearance.Outline" OnClick="() => Complete()">Complete</FluentButton>
-                <FluentButton Appearance="Appearance.Accent" OnClick="() => BuildJob()">Build Job</FluentButton>
-                    <FluentButton Appearance="Appearance.Accent" OnClick="() => OpenActiveGoalCreator()">New</FluentButton>
+                <FluentButton Appearance="Appearance.Outline" OnClick="() => OpenGoals()">@Loc.BtnGoals</FluentButton>
+                <FluentButton Appearance="Appearance.Outline" OnClick="() => Complete()">@Loc.BtnCompleteJob</FluentButton>
+                <FluentButton Appearance="Appearance.Accent" OnClick="() => BuildJob()">@Loc.BtnBuildJob</FluentButton>
+                    <FluentButton Appearance="Appearance.Accent" OnClick="() => OpenActiveGoalCreator()">@Loc.BtnCreate</FluentButton>
             </FluentToolbar>
 
             <ActiveGoals OnSelected="OpenDetails" OnOpenGoal="OpenGoal" />

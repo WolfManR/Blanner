@@ -3,15 +3,16 @@
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IDialogService DialogService
+@inject ILocalization Loc
 
 @attribute [Authorize]
 
 <div>
 	<div class="goals-table">
 		<div class="goals-table-header row fw-bold align-items-baseline pb-1">
-			<div class="col-2">Total time</div>
-			<div class="col-4">Name</div>
-			<div class="col-3">Elapsed</div>
+			<div class="col-2">@Loc.TotalTimeLabel</div>
+			<div class="col-4">@Loc.NameLabel</div>
+			<div class="col-3">@Loc.ElapsedTimeLabel</div>
 			<div class="col-3 justify-content-end">
 			</div>
 		</div>
@@ -22,7 +23,7 @@
 					Contractor? keyValue = key;
 
 					<div class="row goals-table-item item-header align-items-baseline">
-						<div class="col-9 fw-bold">@(keyValue?.Name ?? "Others")</div>
+						<div class="col-9 fw-bold">@(keyValue?.Name ?? Loc.ContractorNoneName)</div>
 						<div class="col-3 d-flex justify-content-end">
 							<button class="btn btn-danger" @onclick="() => DeleteContractorGroup(key)" disabled><i class="bi bi-trash3"></i></button>
 						</div>
@@ -60,8 +61,8 @@
 	</div>
 
 	<ContextMenu Id="ActiveGoalsContextMenu">
-		<Item OnClick="DeleteGoal"><i class="bi bi-trash3"></i> Delete</Item>
-		<Item Id="menuitem-persist" OnClick="Persist" OnAppearing="ItemOnAppearingHandler"><i class="bi bi-database-add"></i> Persist</Item>
+		<Item OnClick="DeleteGoal"><i class="bi bi-trash3"></i> @Loc.BtnDelete</Item>
+		<Item Id="menuitem-persist" OnClick="Persist" OnAppearing="ItemOnAppearingHandler"><i class="bi bi-database-add"></i> @Loc.BtnPersist</Item>
 	</ContextMenu>
 </div>
 
