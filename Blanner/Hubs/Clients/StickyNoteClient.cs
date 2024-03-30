@@ -11,7 +11,7 @@ public interface IStickyNoteClient {
 	Task NoteDeleted(Guid id);
 }
 
-public class StickyNoteClient : HubClientBase, IStickyNoteClient, IStickyNoteHub {
+public sealed class StickyNoteClient : HubClientBase, IStickyNoteClient, IStickyNoteHub {
 	public StickyNoteClient(NavigationManager NavManager) : base(NavManager.StickyNotesHubUri()) {
 		Hub.On<Note, Task>(nameof(NoteCreated), NoteCreated);
 		Hub.On<Note, Task>(nameof(NoteUpdated), NoteUpdated);

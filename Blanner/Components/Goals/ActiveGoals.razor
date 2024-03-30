@@ -2,6 +2,7 @@
 @inject NavigationManager NavManager
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject GoalsClient GoalsClient
 @inject IDialogService DialogService
 @inject ILocalization Loc
 
@@ -67,8 +68,6 @@
 </div>
 
 @code {
-	private HubConnection? _hubConnection;
-
 	private string _userId = "";
 	private List<ActiveGoalVM> _goals = new();
 	private Dictionary<Value<Contractor, int>, List<ActiveGoalVM>> _goalsGroups = new();
@@ -87,28 +86,29 @@
 
 		await LoadGoals();
 
-		_hubConnection = new HubConnectionBuilder().WithUrl(NavManager.GoalsHubUri()).Build();
+		GoalsClient.OnGoalCreated += OnGoalCreated;
+		GoalsClient.OnGoalHeaderEdited += OnGoalHeaderEdited;
+		GoalsClient.OnGoalDeleted += OnGoalDeleted;
 
-		_hubConnection.On<int, string, ActiveGoalHeaderData>(nameof(IGoalsClient.ActiveGoalHeaderEdited), OnActiveGoalHeaderEdited);
-		_hubConnection.On<int, string, GoalHeaderData>(nameof(IGoalsClient.GoalHeaderEdited), OnGoalHeaderEdited);
-		_hubConnection.On<int, string>(nameof(IGoalsClient.GoalDeleted), OnGoalDeleted);
-		_hubConnection.On<int, string>(nameof(IGoalsClient.ActiveGoalDeleted), OnActiveGoalDeleted);
-		_hubConnection.On<int, string, ActiveGoalData>(nameof(IGoalsClient.ActiveGoalCreated), OnActiveGoalCreated);
-		_hubConnection.On<int, string, GoalData>(nameof(IGoalsClient.GoalCreated), OnGoalCreated);
+		GoalsClient.OnGoalActivated += OnGoalActivated;
+		GoalsClient.OnActiveGoalCreated += OnActiveGoalCreated;
+		GoalsClient.OnActiveGoalHeaderEdited += OnActiveGoalHeaderEdited;
+		GoalsClient.OnActiveGoalDeleted += OnActiveGoalDeleted;
+		
+		GoalsClient.OnTimerEdited += OnTimerEdited;
+		GoalsClient.OnTimerStopped += OnTimerStopped;
+		
+		GoalsClient.OnActiveGoalTimerCreated += OnActiveGoalTimerCreated;
+		GoalsClient.OnActiveGoalTimerEdited += OnActiveGoalTimerEdited;
+		GoalsClient.OnActiveGoalTimerDeleted += OnActiveGoalTimerDeleted;
+		
+		GoalsClient.OnJobsBuilded += OnJobsBuilded;
 
-		_hubConnection.On<int, string, TimeSpan>(nameof(IGoalsClient.TimerStopped), OnTimerStopped);
-		_hubConnection.On<int, int, string, TimerEditData>(nameof(IGoalsClient.TimerEdited), OnTimerEdited);
-		_hubConnection.On<int, int, string, ActiveGoalData>(nameof(IGoalsClient.GoalActivated), OnGoalActivated);
-
-		_hubConnection.On<int, int, string, TimeSpan>(nameof(IGoalsClient.ActiveGoalTimerDeleted), OnActiveGoalTimerDeleted);
-		_hubConnection.On<int, string, ActiveGoalTimeData, TimeSpan>(nameof(IGoalsClient.ActiveGoalTimerCreated), OnActiveGoalTimerCreated);
-		_hubConnection.On<int, string, ActiveGoalTimeData, TimeSpan>(nameof(IGoalsClient.ActiveGoalTimerEdited), OnActiveGoalTimerEdited);
-
-		_hubConnection.On<string>(nameof(IGoalsClient.JobsBuilded), OnJobsBuilded);
-
-		await _hubConnection.StartAsync();
+		await GoalsClient.Start();
 	}
 
+	#region UI Handlers
+	
 	private void ItemOnAppearingHandler(ItemAppearingEventArgs e) {
 		if (e.Data is not ActiveGoalVM item) return;
 		switch (e.MenuItem.Id) {
@@ -189,26 +189,15 @@
 		var response = await Http.PostAsJsonAsync(url, request);
 	}
 
-	private async Task OnActiveGoalHeaderEdited(int goalId, string userId, ActiveGoalHeaderData data) {
-		ActiveGoalVM? goal = _goals.Find(x => x.Id == goalId);
+	#endregion
+	
+	#region Subscriptions
+
+	private async Task OnGoalCreated(int goalId, string userId, GoalData data) {
+		ActiveGoalVM? goal = _goals.Find(x => x.Id == data.ActiveGoalId);
 		if (goal is null) return;
 
-		var previousContractor = goal.Contractor;
-		var currentContractor = data.Contractor;
-
-		goal.Set(data);
-
-		if (previousContractor?.Id != currentContractor?.Id) {
-			if (_goalsGroups.TryGetValue(new(previousContractor), out var previousGroup)) {
-				previousGroup.Remove(goal);
-			}
-			if (_goalsGroups.TryGetValue(new(currentContractor), out var currentGroup)) {
-				currentGroup.Add(goal);
-			}
-			else {
-				_goalsGroups.TryAdd(new(currentContractor), new() { goal });
-			}
-		}
+		goal.GoalId = data.Id;
 
 		await InvokeAsync(StateHasChanged);
 	}
@@ -237,33 +226,36 @@
 		await InvokeAsync(StateHasChanged);
 	}
 
-
-	private async Task OnGoalCreated(int goalId, string userId, GoalData data) {
-		ActiveGoalVM? goal = _goals.Find(x => x.Id == data.ActiveGoalId);
+	private async Task OnGoalDeleted(int goalId, string userId) {
+		ActiveGoalVM? goal = _goals.Find(x => x.GoalId == goalId);
 		if (goal is null) return;
 
-		goal.GoalId = data.Id;
+		_goals.Remove(goal);
+		Value<Contractor, int> contractor = new(goal.Contractor);
+		if (_goalsGroups.TryGetValue(contractor, out var goals)) {
+			goals.Remove(goal);
+			if (goals.Count == 0) _goalsGroups.Remove(contractor);
+		}
 
 		await InvokeAsync(StateHasChanged);
 	}
 
-	private async Task OnTimerStopped(int goalId, string userId, TimeSpan timeTotal) {
-		ActiveGoalVM? goal = _goals.Find(x => x.Id == goalId);
-		if (goal is null) return;
 
-		goal.TotalElapsedTime = timeTotal;
-		goal.ActiveTimerId = 0;
-		goal.TimerTime = TimeSpan.Zero;
-		goal.Tick = false;
-
-		await InvokeAsync(StateHasChanged);
-	}
-
-	private async Task OnTimerEdited(int goalId, int timerId, string userId, TimerEditData data) {
-		ActiveGoalVM? goal = _goals.Find(x => x.Id == goalId);
-		if (goal is null) return;
-
-		goal.TotalElapsedTime = data.Time;
+	private async Task OnGoalActivated(int goalId, int activeGoalId, string userId, ActiveGoalData data) {
+		ActiveGoalVM? goal = _goals.Find(x => x.Id == activeGoalId);
+		if (goal is null) {
+			goal = new(data);
+			_goals.Insert(0, goal);
+			Value<Contractor, int> contractor = new(data.Contractor);
+			List<ActiveGoalVM>? activeGoals;
+			if (!_goalsGroups.TryGetValue(contractor, out activeGoals)) {
+				_goalsGroups.Add(contractor, activeGoals ??= new());
+			}
+			activeGoals.Insert(0, goal);
+		}
+		else {
+			goal.SetActiveData(data);
+		}
 
 		await InvokeAsync(StateHasChanged);
 	}
@@ -287,41 +279,32 @@
 		await InvokeAsync(StateHasChanged);
 	}
 
-	private async Task OnGoalActivated(int goalId, int activeGoalId, string userId, ActiveGoalData data) {
-		ActiveGoalVM? goal = _goals.Find(x => x.Id == activeGoalId);
-		if (goal is null) {
-			goal = new(data);
-			_goals.Insert(0, goal);
-			Value<Contractor, int> contractor = new(data.Contractor);
-			List<ActiveGoalVM>? activeGoals;
-			if (!_goalsGroups.TryGetValue(contractor, out activeGoals)) {
-				_goalsGroups.Add(contractor, activeGoals ??= new());
-			}
-			activeGoals.Insert(0, goal);
-		}
-		else {
-			goal.SetActiveData(data);
-		}
-
-		await InvokeAsync(StateHasChanged);
-	}
-
-	private async Task OnGoalDeleted(int goalId, string userId) {
-		ActiveGoalVM? goal = _goals.Find(x => x.GoalId == goalId);
+	private async Task OnActiveGoalHeaderEdited(int goalId, string userId, ActiveGoalHeaderData data) {
+		ActiveGoalVM? goal = _goals.Find(x => x.Id == goalId);
 		if (goal is null) return;
 
-		_goals.Remove(goal);
-		Value<Contractor, int> contractor = new(goal.Contractor);
-		if (_goalsGroups.TryGetValue(contractor, out var goals)) {
-			goals.Remove(goal);
-			if (goals.Count == 0) _goalsGroups.Remove(contractor);
+		var previousContractor = goal.Contractor;
+		var currentContractor = data.Contractor;
+
+		goal.Set(data);
+
+		if (previousContractor?.Id != currentContractor?.Id) {
+			if (_goalsGroups.TryGetValue(new(previousContractor), out var previousGroup)) {
+				previousGroup.Remove(goal);
+			}
+			if (_goalsGroups.TryGetValue(new(currentContractor), out var currentGroup)) {
+				currentGroup.Add(goal);
+			}
+			else {
+				_goalsGroups.TryAdd(new(currentContractor), new() { goal });
+			}
 		}
 
 		await InvokeAsync(StateHasChanged);
 	}
 
 	private async Task OnActiveGoalDeleted(int goalId, string userId) {
-		ActiveGoalVM? goal = _goals.Find(x => x.GoalId == goalId);
+		ActiveGoalVM? goal = _goals.Find(x => x.Id == goalId);
 		if (goal is null) return;
 
 		_goals.Remove(goal);
@@ -334,14 +317,28 @@
 		await InvokeAsync(StateHasChanged);
 	}
 
-	private async Task OnActiveGoalTimerDeleted(int goalId, int timerId, string userId, TimeSpan goalTotalTime) {
+
+	private async Task OnTimerEdited(int goalId, int timerId, string userId, TimerEditData data) {
 		ActiveGoalVM? goal = _goals.Find(x => x.Id == goalId);
 		if (goal is null) return;
 
-		goal.TotalElapsedTime = goalTotalTime;
+		goal.TotalElapsedTime = data.Time;
 
 		await InvokeAsync(StateHasChanged);
 	}
+
+	private async Task OnTimerStopped(int goalId, string userId, TimeSpan timeTotal) {
+		ActiveGoalVM? goal = _goals.Find(x => x.Id == goalId);
+		if (goal is null) return;
+
+		goal.TotalElapsedTime = timeTotal;
+		goal.ActiveTimerId = 0;
+		goal.TimerTime = TimeSpan.Zero;
+		goal.Tick = false;
+
+		await InvokeAsync(StateHasChanged);
+	}
+
 
 	private async Task OnActiveGoalTimerCreated(int goalId, string userId, ActiveGoalTimeData _, TimeSpan goalTotalTime) {
 		ActiveGoalVM? goal = _goals.Find(x => x.Id == goalId);
@@ -361,10 +358,22 @@
 		await InvokeAsync(StateHasChanged);
 	}
 
+	private async Task OnActiveGoalTimerDeleted(int goalId, int timerId, string userId, TimeSpan goalTotalTime) {
+		ActiveGoalVM? goal = _goals.Find(x => x.Id == goalId);
+		if (goal is null) return;
+
+		goal.TotalElapsedTime = goalTotalTime;
+
+		await InvokeAsync(StateHasChanged);
+	}
+
+
 	private async Task OnJobsBuilded(string userId) {
 		if (_userId != userId) return;
 		await LoadGoals();
 
 		await InvokeAsync(StateHasChanged);
 	}
+
+	#endregion
 }

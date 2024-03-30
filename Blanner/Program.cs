@@ -63,7 +63,9 @@ builder.Services
 builder.Services
 	.AddBlazorContextMenu();
 
-builder.Services.AddScoped<StickyNoteClient>();
+builder.Services
+	.AddScoped<StickyNoteClient>()
+	.AddScoped<GoalsClient>();
 
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();

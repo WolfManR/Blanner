@@ -3,6 +3,7 @@
 @inject NavigationManager NavManager
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject GoalsClient GoalsClient
 @inject IDialogService DialogService
 @inject ILocalization Loc
 
@@ -66,8 +67,6 @@
 
 
 @code {
-	private HubConnection? _hubConnection;
-
 	private string _userId = "";
 	private List<GoalVM> _goals = new();
 	private Dictionary<Value<Contractor, int>, List<GoalVM>> _goalsGroups = new();
@@ -87,18 +86,20 @@
 
 		await LoadGoals();
 
-		_hubConnection = new HubConnectionBuilder().WithUrl(NavManager.GoalsHubUri()).Build();
+		GoalsClient.OnGoalCreated += OnGoalCreated;
+		GoalsClient.OnGoalHeaderEdited += OnGoalHeaderEdited;
+		GoalsClient.OnGoalDeleted += OnGoalDeleted;
+		
+		GoalsClient.OnGoalActivated += OnGoalActivated;
+		GoalsClient.OnActiveGoalHeaderEdited += OnActiveGoalHeaderEdited;
+		GoalsClient.OnActiveGoalDeleted += OnActiveGoalDeleted;
+		
+		GoalsClient.OnJobsBuilded += OnJobsBuilded;
 
-		_hubConnection.On<int, string, ActiveGoalHeaderData>(nameof(IGoalsClient.ActiveGoalHeaderEdited), OnActiveGoalHeaderEdited);
-		_hubConnection.On<int, string, GoalHeaderData>(nameof(IGoalsClient.GoalHeaderEdited), OnGoalHeaderEdited);
-		_hubConnection.On<int, int, string, ActiveGoalData>(nameof(IGoalsClient.GoalActivated), OnGoalActivated);
-		_hubConnection.On<int, string, GoalData>(nameof(IGoalsClient.GoalCreated), OnGoalCreated);
-		_hubConnection.On<int, string>(nameof(IGoalsClient.GoalDeleted), OnGoalDeleted);
-		_hubConnection.On<int, string>(nameof(IGoalsClient.ActiveGoalDeleted), OnActiveGoalDeleted);
-		_hubConnection.On<string>(nameof(IGoalsClient.JobsBuilded), OnJobsBuilded);
-
-		await _hubConnection.StartAsync();
+		await GoalsClient.Start();
 	}
+
+	#region UI Handlers
 
 	private async Task LoadGoals() {
 		var url = NavManager.GetUriWithQueryParameters(NavManager.ToAbsoluteUri("api/goals").AbsoluteUri, new Dictionary<string, object?> {
@@ -165,6 +166,72 @@
 		var response = await Http.PostAsJsonAsync(url, request);
 	}
 
+	#endregion
+
+	#region Subscriptions
+
+	private async Task OnGoalCreated(int goalId, string userId, GoalData data) {
+		GoalVM? goal = _goals.Find(x => x.Id == goalId);
+		if (goal is not null) return;
+		goal = new(data);
+		_goals.Insert(0, goal);
+		Value<Contractor, int> contractor = new(data.Contractor);
+		List<GoalVM>? goals;
+		if (!_goalsGroups.TryGetValue(contractor, out goals)) {
+			_goalsGroups.Add(contractor, goals ??= new());
+		}
+		goals.Insert(0, goal);
+
+		await InvokeAsync(StateHasChanged);
+	}
+
+	private async Task OnGoalHeaderEdited(int goalId, string userId, GoalHeaderData data) {
+		GoalVM? goal = _goals.Find(x => x.Id == goalId);
+		if (goal is null) return;
+
+		var previousContractor = goal.Contractor;
+		var currentContractor = data.Contractor;
+
+		goal.Set(data);
+
+		if (previousContractor?.Id != currentContractor?.Id) {
+			if (_goalsGroups.TryGetValue(new(previousContractor), out var previousGroup)) {
+				previousGroup.Remove(goal);
+			}
+			if (_goalsGroups.TryGetValue(new(currentContractor), out var currentGroup)) {
+				currentGroup.Add(goal);
+			}
+			else {
+				_goalsGroups.TryAdd(new(currentContractor), new() { goal });
+			}
+		}
+
+		await InvokeAsync(StateHasChanged);
+	}
+
+	private async Task OnGoalDeleted(int goalId, string userId) {
+		GoalVM? goal = _goals.Find(x => x.Id == goalId);
+		if (goal is null) return;
+
+		_goals.Remove(goal);
+		Value<Contractor, int> contractor = new(goal.Contractor);
+		if (_goalsGroups.TryGetValue(contractor, out var goals)) {
+			goals.Remove(goal);
+			if (goals.Count == 0) _goalsGroups.Remove(contractor);
+		}
+
+		await InvokeAsync(StateHasChanged);
+	}
+
+
+	private async Task OnGoalActivated(int goalId, int activeGoalId, string userId, ActiveGoalData data) {
+		if (!FilterForm.IncludeActive) return;
+		GoalVM? goal = _goals.Find(x => x.Id == goalId);
+		if (goal is null) return;
+		goal.SetActiveData(data);
+
+		await InvokeAsync(StateHasChanged);
+	}
 
 	private async Task OnActiveGoalHeaderEdited(int goalId, string userId, ActiveGoalHeaderData data) {
 		GoalVM? goal = _goals.Find(x => x.ActiveGoalId == goalId);
@@ -190,68 +257,6 @@
 		await InvokeAsync(StateHasChanged);
 	}
 
-	private async Task OnGoalHeaderEdited(int goalId, string userId, GoalHeaderData data) {
-		GoalVM? goal = _goals.Find(x => x.Id == goalId);
-		if (goal is null) return;
-
-		var previousContractor = goal.Contractor;
-		var currentContractor = data.Contractor;
-
-		goal.Set(data);
-
-		if(previousContractor?.Id != currentContractor?.Id) {
-			if(_goalsGroups.TryGetValue(new(previousContractor), out var previousGroup)) {
-				previousGroup.Remove(goal);
-			}
-			if(_goalsGroups.TryGetValue(new(currentContractor), out var currentGroup)) {
-				currentGroup.Add(goal);
-			}
-			else {
-				_goalsGroups.TryAdd(new(currentContractor), new() { goal });
-			}
-		}
-
-		await InvokeAsync(StateHasChanged);
-	}
-
-	private async Task OnGoalActivated(int goalId, int activeGoalId, string userId, ActiveGoalData data) {
-		if (!FilterForm.IncludeActive) return;
-		GoalVM? goal = _goals.Find(x => x.Id == goalId);
-		if (goal is null) return;
-		goal.SetActiveData(data);
-
-		await InvokeAsync(StateHasChanged);
-	}
-
-	private async Task OnGoalCreated(int goalId, string userId, GoalData data) {
-		GoalVM? goal = _goals.Find(x => x.Id == goalId);
-		if (goal is not null) return;
-		goal = new(data);
-		_goals.Insert(0, goal);
-		Value<Contractor, int> contractor = new(data.Contractor);
-		List<GoalVM>? goals;
-		if (!_goalsGroups.TryGetValue(contractor, out goals)) {
-			_goalsGroups.Add(contractor, goals ??= new());
-		}
-		goals.Insert(0, goal);
-
-		await InvokeAsync(StateHasChanged);
-	}
-
-	private async Task OnGoalDeleted(int goalId, string userId) {
-		GoalVM? goal = _goals.Find(x => x.Id == goalId);
-		if (goal is null) return;
-
-		_goals.Remove(goal);
-		Value<Contractor, int> contractor = new(goal.Contractor);
-		if (_goalsGroups.TryGetValue(contractor, out var goals)) {
-			goals.Remove(goal);
-			if (goals.Count == 0) _goalsGroups.Remove(contractor);
-		}
-
-		await InvokeAsync(StateHasChanged);
-	}
-
 	private async Task OnActiveGoalDeleted(int goalId, string userId) {
 		GoalVM? goal = _goals.Find(x => x.Id == goalId);
 		if (goal is null) return;
@@ -261,6 +266,7 @@
 		await InvokeAsync(StateHasChanged);
 	}
 
+
 	private async Task OnJobsBuilded(string userId) {
 		if (_userId != userId) return;
 
@@ -268,6 +274,8 @@
 
 		await InvokeAsync(StateHasChanged);
 	}
+
+	#endregion
 
 	class GoalsFilterForm {
 		public bool IncludeActive { get; set; }
