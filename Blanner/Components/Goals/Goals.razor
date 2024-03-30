@@ -89,13 +89,13 @@
 
 		_hubConnection = new HubConnectionBuilder().WithUrl(NavManager.GoalsHubUri()).Build();
 
-		_hubConnection.On<int, string, ActiveGoalHeaderData>(nameof(IGoalsHub.ActiveGoalHeaderEdited), OnActiveGoalHeaderEdited);
-		_hubConnection.On<int, string, GoalHeaderData>(nameof(IGoalsHub.GoalHeaderEdited), OnGoalHeaderEdited);
-		_hubConnection.On<int, int, string, ActiveGoalData>(nameof(IGoalsHub.GoalActivated), OnGoalActivated);
-		_hubConnection.On<int, string, GoalData>(nameof(IGoalsHub.GoalCreated), OnGoalCreated);
-		_hubConnection.On<int, string>(nameof(IGoalsHub.GoalDeleted), OnGoalDeleted);
-		_hubConnection.On<int, string>(nameof(IGoalsHub.ActiveGoalDeleted), OnActiveGoalDeleted);
-		_hubConnection.On<string>(nameof(IGoalsHub.JobsBuilded), OnJobsBuilded);
+		_hubConnection.On<int, string, ActiveGoalHeaderData>(nameof(IGoalsClient.ActiveGoalHeaderEdited), OnActiveGoalHeaderEdited);
+		_hubConnection.On<int, string, GoalHeaderData>(nameof(IGoalsClient.GoalHeaderEdited), OnGoalHeaderEdited);
+		_hubConnection.On<int, int, string, ActiveGoalData>(nameof(IGoalsClient.GoalActivated), OnGoalActivated);
+		_hubConnection.On<int, string, GoalData>(nameof(IGoalsClient.GoalCreated), OnGoalCreated);
+		_hubConnection.On<int, string>(nameof(IGoalsClient.GoalDeleted), OnGoalDeleted);
+		_hubConnection.On<int, string>(nameof(IGoalsClient.ActiveGoalDeleted), OnActiveGoalDeleted);
+		_hubConnection.On<string>(nameof(IGoalsClient.JobsBuilded), OnJobsBuilded);
 
 		await _hubConnection.StartAsync();
 	}

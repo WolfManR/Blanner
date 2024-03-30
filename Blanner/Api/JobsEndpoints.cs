@@ -11,7 +11,7 @@ public static class JobsEndpoints {
 	public static void MapJobs(this IEndpointRouteBuilder endpoints) {
 		var jobsGroup = endpoints.MapGroup("/jobs");
 
-        jobsGroup.MapPost("/", JobsEndpointsBehaviors.Jobs);
+		jobsGroup.MapPost("/", JobsEndpointsBehaviors.Jobs);
 		jobsGroup.MapGet("/{jobId}", JobsEndpointsBehaviors.Job);
 		jobsGroup.MapPost("/build", JobsEndpointsBehaviors.BuildJob);
 	}
@@ -32,27 +32,27 @@ public static class JobsEndpointsBehaviors {
 	public static async Task<IResult> BuildJob(
 		[FromBody] BuildJobData request,
 		[FromServices] ApplicationDbContext dbContext,
-        [FromServices] IHubContext<GoalsHub, IGoalsHub> hubContext) {
+		[FromServices] IHubContext<GoalsHub, IGoalsClient> hubContext) {
 		var providerIsSQLite = dbContext.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite";
 
-        User? user = await dbContext.Users.FindAsync(request.UserId);
+		User? user = await dbContext.Users.FindAsync(request.UserId);
 		if (user is null) return TypedResults.BadRequest();
 
-        await using (var transaction = await dbContext.Database.BeginTransactionAsync()) {
-            var activeGoals = await dbContext.ActiveGoals.AsNoTracking()
-            .Include(x => x.User)
-            .Where(x => x.User != null && x.User.Id == request.UserId && x.CurrentlyActiveTime != null)
-            .Select(x => new { GoalId = x.Id, TimerId = x.CurrentlyActiveTime!.Value })
-            .ToDictionaryAsync(x => x.GoalId, x => x.TimerId);
+		await using (var transaction = await dbContext.Database.BeginTransactionAsync()) {
+			var activeGoals = await dbContext.ActiveGoals.AsNoTracking()
+			.Include(x => x.User)
+			.Where(x => x.User != null && x.User.Id == request.UserId && x.CurrentlyActiveTime != null)
+			.Select(x => new { GoalId = x.Id, TimerId = x.CurrentlyActiveTime!.Value })
+			.ToDictionaryAsync(x => x.GoalId, x => x.TimerId);
 
-            var activeTimersId = activeGoals.Values.ToHashSet();
-            var activeGoalsId = activeGoals.Keys.ToHashSet();
+			var activeTimersId = activeGoals.Values.ToHashSet();
+			var activeGoalsId = activeGoals.Keys.ToHashSet();
 
-            await dbContext.ActiveGoalsTime.Where(x => activeTimersId.Contains(x.Id)).ExecuteUpdateAsync(setters => setters.SetProperty(x => x.End, request.BuildDate));
-            await dbContext.ActiveGoals.Where(x => activeGoalsId.Contains(x.Id)).ExecuteUpdateAsync(setters => setters.SetProperty(x => x.CurrentlyActiveTime, x => null));
+			await dbContext.ActiveGoalsTime.Where(x => activeTimersId.Contains(x.Id)).ExecuteUpdateAsync(setters => setters.SetProperty(x => x.End, request.BuildDate));
+			await dbContext.ActiveGoals.Where(x => activeGoalsId.Contains(x.Id)).ExecuteUpdateAsync(setters => setters.SetProperty(x => x.CurrentlyActiveTime, x => null));
 
 			await transaction.CommitAsync();
-        }
+		}
 
 		var goals = await dbContext.ActiveGoals.AsNoTracking()
 			.Include(x => x.User).Where(x => x.User != null && x.User.Id == request.UserId)
@@ -63,22 +63,22 @@ public static class JobsEndpointsBehaviors {
 		
 		await using (var transaction = await dbContext.Database.BeginTransactionAsync()) {
 			if (!providerIsSQLite) {
-                await dbContext.ActiveGoals
-                .Include(x => x.User)
-                .Include(x => x.GoalTime)
-                .Where(x => x.User != null && x.User.Id == request.UserId)
-                .ExecuteDeleteAsync();
+				await dbContext.ActiveGoals
+				.Include(x => x.User)
+				.Include(x => x.GoalTime)
+				.Where(x => x.User != null && x.User.Id == request.UserId)
+				.ExecuteDeleteAsync();
 
-                await dbContext.ToDos
-                    .Include(x => x.User).Where(x => x.User != null && x.User.Id == request.UserId)
-                    .Include(x => x.Goal)
-                    .Include(x => x.ActiveGoal)
-                    .Where(x => x.Done && x.Goal != null && x.ActiveGoal != null)
-                    .ExecuteDeleteAsync();
+				await dbContext.ToDos
+					.Include(x => x.User).Where(x => x.User != null && x.User.Id == request.UserId)
+					.Include(x => x.Goal)
+					.Include(x => x.ActiveGoal)
+					.Where(x => x.Done && x.Goal != null && x.ActiveGoal != null)
+					.ExecuteDeleteAsync();
 			}
 			else {
 				var activeGoalsToDelete = await dbContext.ActiveGoals
-                                .Include(x => x.User).Where(x => x.User != null && x.User.Id == request.UserId)
+								.Include(x => x.User).Where(x => x.User != null && x.User.Id == request.UserId)
 								.Include(x => x.GoalTime).ToListAsync();
 				dbContext.RemoveRange(activeGoalsToDelete);
 
@@ -88,16 +88,16 @@ public static class JobsEndpointsBehaviors {
 									.Include(x => x.ActiveGoal)
 									.Where(x => x.Done && x.Goal != null && x.ActiveGoal != null)
 									.ToListAsync();
-                dbContext.RemoveRange(handledTasks);
-            }
+				dbContext.RemoveRange(handledTasks);
+			}
 			
-            await transaction.CommitAsync();
-        }
+			await transaction.CommitAsync();
+		}
 
 		Dictionary<int, Contractor> attachedContractors = [];
 
 		foreach (var goal in goals)
-        {
+		{
 			Contractor? attachedContractor = null;
 			if(goal.Contractor is { Id: { } contractorId }) {
 				if(!attachedContractors.TryGetValue(contractorId, out attachedContractor)) {
@@ -116,18 +116,18 @@ public static class JobsEndpointsBehaviors {
 
 			dbContext.Jobs.Update(context);
 
-            foreach (var time in goal.GoalTime)
-            {
-                JobTime jobTime = new() {
+			foreach (var time in goal.GoalTime)
+			{
+				JobTime jobTime = new() {
 					User = user,
 					Context = context,
 					Start = time.Start,
 					End = time.End
 				};
 
-                dbContext.JobsTime.Update(jobTime);
-            }
-        }
+				dbContext.JobsTime.Update(jobTime);
+			}
+		}
 
 		await dbContext.SaveChangesAsync();
 

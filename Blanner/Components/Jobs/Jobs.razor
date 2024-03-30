@@ -76,7 +76,7 @@
 
 		_hubConnection = new HubConnectionBuilder().WithUrl(NavManager.GoalsHubUri()).Build();
 
-		_hubConnection.On<string>(nameof(IGoalsHub.JobsBuilded), OnJobsBuilded);
+		_hubConnection.On<string>(nameof(IGoalsClient.JobsBuilded), OnJobsBuilded);
 
 		await _hubConnection.StartAsync();
 	}
