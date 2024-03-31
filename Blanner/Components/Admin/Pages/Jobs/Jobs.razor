@@ -57,34 +57,31 @@
 	protected override Task OnInitializedAsync() {
 		_itemsProvider = async req =>
 		{
-			var predata = await DbContext.JobsTime.AsNoTracking()
+			var data = await DbContext.JobsTime.AsNoTracking()
 				.Include(x => x.User)
 				.Include(x => x.Context).ThenInclude(x => x.Contractor)
-				.ToListAsync();
-
-			var data = predata
-				.Select(x => x.Context).DistinctBy(x => x.Id)
+				.Select(x => x.Context).Distinct()
 				.Select(x => new {
 					Context = x,
 					User = DbContext.JobsTime.Include(x => x.Context).Include(x => x.User).Where(t => t.Context == x).Select(x => x.User).First(),
-					Start = DbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.Start).ToList().Min(),
-					End = DbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.End).ToList().Max(),
+					Start = DbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.Start).Min(),
+					End = DbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.End).Max(),
 					TotalTime = DbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.End - t.Start).ToList()
-				}).ToList();
+				}).ToListAsync();
 
-			var result = data
-				.Select(x => new JobListView {
-						Id = x.Context.Id,
-						Start = x.Start,
-						End = x.End,
-				UserId = x.User != null ? x.User.Id : "",
-				UserName = x.User != null ? x.User.UserName : "",
-						ContractorName = x.Context.Contractor != null ? x.Context.Contractor.Name : "",
-						Name = x.Context.Name,
-						Marked = x.Context.Marked,
-						MarkComment = x.Context.MarkComment,
-						TotalTime = x.TotalTime.Aggregate((cum, t) => cum + t)
-					});
+			List<JobListView> result = data
+			.Select(x => new JobListView {
+					Id = x.Context.Id,
+					Start = x.Start,
+					End = x.End,
+					UserId = x.User != null ? x.User.Id : "",
+					UserName = x.User != null ? x.User.UserName : "",
+					ContractorName = x.Context.Contractor != null ? x.Context.Contractor.Name : "",
+					Name = x.Context.Name,
+					Marked = x.Context.Marked,
+					MarkComment = x.Context.MarkComment,
+					TotalTime = x.TotalTime.Aggregate((cum, t) => cum + t)
+				}).ToList();
 
 			return GridItemsProviderResult.From(result.Skip(req.StartIndex).Take(req.Count ?? 10).ToList(), data.Count);
 		};

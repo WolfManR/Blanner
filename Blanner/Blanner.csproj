@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Migrations\SQLiteMigrations\SQLiteMigrations.csproj" />
     <ProjectReference Include="..\Migrations\SQLServerMigrations\SQLServerMigrations.csproj" />
     <PackageReference Include="Blazor.ContextMenu" Version="1.17.0" />
     <PackageReference Include="Coravel" Version="5.0.2" />

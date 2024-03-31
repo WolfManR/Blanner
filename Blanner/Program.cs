@@ -42,8 +42,7 @@ builder.Services.AddAuthentication(options =>
 var dbProvider = builder.Configuration["DBProvider"] ?? throw new InvalidOperationException("Database provider not selected.");
 var connectionString = builder.Configuration.GetConnectionString(dbProvider) ?? throw new InvalidOperationException($"Connection string '{dbProvider}' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options => {
-	if (dbProvider.Equals("sqlite", StringComparison.CurrentCultureIgnoreCase)) options.UseSqlite(connectionString, ctx => ctx.MigrationsAssembly(Assembly.GetAssembly(typeof(SQLiteMigrations.Mark)).FullName));
-	else options.UseSqlServer(connectionString, ctx => ctx.MigrationsAssembly(Assembly.GetAssembly(typeof(SQLServerMigrations.Mark)).FullName)); 
+	options.UseSqlServer(connectionString, ctx => ctx.MigrationsAssembly(Assembly.GetAssembly(typeof(SQLServerMigrations.Mark))?.FullName)); 
 });
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 

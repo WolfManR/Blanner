@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34309.116
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SQLiteMigrations", "Migrations\SQLiteMigrations\SQLiteMigrations.csproj", "{95DE774F-A266-41F0-AFC1-D7DDD0D655DC}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blanner.Data", "Blanner.Data\Blanner.Data.csproj", "{AC3DDCEE-0E77-437F-A1F9-55C6AE9FA79E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SQLServerMigrations", "Migrations\SQLServerMigrations\SQLServerMigrations.csproj", "{E9317286-CEF7-4656-A33D-8EFAE94CA1ED}"
@@ -17,10 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{95DE774F-A266-41F0-AFC1-D7DDD0D655DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{95DE774F-A266-41F0-AFC1-D7DDD0D655DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{95DE774F-A266-41F0-AFC1-D7DDD0D655DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{95DE774F-A266-41F0-AFC1-D7DDD0D655DC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AC3DDCEE-0E77-437F-A1F9-55C6AE9FA79E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AC3DDCEE-0E77-437F-A1F9-55C6AE9FA79E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AC3DDCEE-0E77-437F-A1F9-55C6AE9FA79E}.Release|Any CPU.ActiveCfg = Release|Any CPU
