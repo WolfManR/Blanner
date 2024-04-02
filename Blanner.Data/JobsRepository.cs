@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Blanner.Data.Models;
+
+using Microsoft.EntityFrameworkCore;
 
 namespace Blanner.Data;
 
@@ -68,4 +70,86 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 
         return result;
     }
+
+    public async Task<bool> BuildJob(BuildJobData data) {
+		User? user = await dbContext.Users.FindAsync(data.UserId);
+		if (user is null) return false;
+
+		await using (var transaction = await dbContext.Database.BeginTransactionAsync()) {
+			var activeGoals = await dbContext.ActiveGoals.AsNoTracking()
+			.Include(x => x.User)
+			.Where(x => x.User != null && x.User.Id == data.UserId && x.CurrentlyActiveTime != null)
+			.Select(x => new { GoalId = x.Id, TimerId = x.CurrentlyActiveTime!.Value })
+			.ToDictionaryAsync(x => x.GoalId, x => x.TimerId);
+
+			var activeTimersId = activeGoals.Values.ToHashSet();
+			var activeGoalsId = activeGoals.Keys.ToHashSet();
+
+			await dbContext.ActiveGoalsTime.Where(x => activeTimersId.Contains(x.Id)).ExecuteUpdateAsync(setters => setters.SetProperty(x => x.End, data.BuildDate));
+			await dbContext.ActiveGoals.Where(x => activeGoalsId.Contains(x.Id)).ExecuteUpdateAsync(setters => setters.SetProperty(x => x.CurrentlyActiveTime, x => null));
+
+			await transaction.CommitAsync();
+		}
+
+		var goals = await dbContext.ActiveGoals.AsNoTracking()
+			.Include(x => x.User).Where(x => x.User != null && x.User.Id == data.UserId)
+			.Include(x => x.Contractor)
+			.Include(x => x.Tasks.Where(x => x.Done))
+			.Include(x => x.GoalTime)
+			.ToListAsync();
+
+		Dictionary<int, Contractor> attachedContractors = [];
+
+		foreach (var goal in goals) {
+			Contractor? attachedContractor = null;
+			if (goal.Contractor is { Id: { } contractorId }) {
+				if (!attachedContractors.TryGetValue(contractorId, out attachedContractor)) {
+					attachedContractor = await dbContext.Contractors.FindAsync(contractorId);
+					if (attachedContractor is not null) {
+						attachedContractors.TryAdd(contractorId, attachedContractor);
+					}
+				}
+			}
+
+			JobContext context = new() {
+				Contractor = attachedContractor,
+				Comment = goal.Comment,
+				Name = goal.Name
+			};
+
+			dbContext.Jobs.Update(context);
+
+			foreach (var time in goal.GoalTime) {
+				JobTime jobTime = new() {
+					User = user,
+					Context = context,
+					Start = time.Start,
+					End = time.End
+				};
+
+				dbContext.JobsTime.Update(jobTime);
+			}
+		}
+
+		await dbContext.SaveChangesAsync();
+
+		await using (var transaction = await dbContext.Database.BeginTransactionAsync()) {
+			await dbContext.ActiveGoals
+				.Include(x => x.User)
+				.Include(x => x.GoalTime)
+				.Where(x => x.User != null && x.User.Id == data.UserId)
+				.ExecuteDeleteAsync();
+
+			await dbContext.ToDos
+				.Include(x => x.User).Where(x => x.User != null && x.User.Id == data.UserId)
+				.Include(x => x.Goal)
+				.Include(x => x.ActiveGoal)
+				.Where(x => x.Done && x.Goal != null && x.ActiveGoal != null)
+				.ExecuteDeleteAsync();
+
+			await transaction.CommitAsync();
+		}
+
+		return true;
+	}
 }
