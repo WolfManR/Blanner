@@ -18,12 +18,12 @@
 	</div>
 
 	<div class="mt-2">
-		@foreach (var group in _data.GroupBy(x => x.Start.Date).OrderByDescending(x => x.Key)) {
+		@foreach (var group in _data.GroupBy(x => x.Date).OrderByDescending(x => x.Key)) {
 			<div class="card mb-3">
 				<div class="card-header">
 					<div class="row">
 						<span class="col-6 fw-bold">@group.Key.ToString("D")</span>
-						<span class="col-1 fw-bold">@group.Select(x => x.TotalTime).Aggregate((cum, t) => cum + t).ToString(UserSettings.TimeFormatterValue())</span>
+						<span class="col-1 fw-bold">@group.Select(x => x.ElapsedTime).Aggregate((cum, t) => cum + t).ToString(UserSettings.TimeFormatterValue())</span>
 					</div>
 				</div>
 				<div class="card-body">
@@ -35,10 +35,10 @@
 								<div class="me-2 bg-dark bg-opacity-10 p-2 rounded-2 m-1">
 									<div class="row align-items-baseline">
 										<h5 class="col-6 fs-4">@item.Name</h5>
-										<span class="col-1">@item.TotalTime.ToString(UserSettings.TimeFormatterValue())</span>
+										<span class="col-1">@item.ElapsedTime.ToString(UserSettings.TimeFormatterValue())</span>
 										<span class="col-1"><span>@item.Start.ToString(UserSettings.DateTimeFormatterValue())</span> - <span>@item.End.ToString(UserSettings.DateTimeFormatterValue())</span></span>
 										<div class="col-1">
-											<input class="form-check-input" type="checkbox" value="@item.Marked" />
+											<input class="form-check-input" type="checkbox" value="@item.Saved" />
 										</div>
 									</div>
 

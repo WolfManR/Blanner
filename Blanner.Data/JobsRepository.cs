@@ -8,63 +8,49 @@ public class JobsRepository(ApplicationDbContext dbContext) {
     private readonly ApplicationDbContext _dbContext = dbContext;
 
     public async Task<List<JobHeaderData>> List(string userId, DateTimeOffset start, DateTimeOffset end) {
-        var data = await _dbContext.JobsTime.AsNoTracking()
+        var data = await _dbContext.Jobs.AsNoTracking()
                  .Include(x => x.User)
                  .Where(x => x.User != null && x.User.Id == userId)
-                 .Include(x => x.Context).ThenInclude(x => x.Contractor)
+                 .Include(x => x.Time)
+                 .Include(x => x.Contractor)
                  .Where(x => x.End > start && x.Start < end)
-                 .Select(x => x.Context).Distinct()
-                 .Select(x => new {
-                     Context = x,
-                     Start = _dbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.Start).Min(),
-                     End = _dbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.End).Max(),
-                     TotalTime = _dbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.End - t.Start).ToList()
-                 }).ToListAsync();
+                 .Select(x => new JobHeaderData {
+					 Id = x.Id,
+					 User = x.User,
+					 Contractor = x.Contractor,
+					 Date = x.Date,
+					 Name = x.Name,
+					 Comment = x.Comment,
+					 Saved = x.Saved,
+					 ElapsedTime = x.ElapsedTime,
+					 Start = x.Start,
+					 End = x.End,
+				 }).ToListAsync();
 
-        List<JobHeaderData> result = data
-        .Select(x => new JobHeaderData {
-            Id = x.Context.Id,
-            Start = x.Start,
-            End = x.End,
-            Contractor = x.Context.Contractor,
-            Name = x.Context.Name,
-            Comment = x.Context.Comment,
-            Marked = x.Context.Marked,
-            MarkComment = x.Context.MarkComment,
-            TotalTime = x.TotalTime.Aggregate((cum, t) => cum + t)
-        }).ToList();
-
-        return result;
+        return data;
     }
 
     public async Task<JobDetailsData?> Details(int id) {
-        JobDetailsData? result = await _dbContext.JobsTime
+        JobDetailsData? result = await _dbContext.Jobs
         .AsNoTracking()
-        .Include(x => x.Context).ThenInclude(x => x.Contractor)
-        .Where(x => x.Context.Id == id)
-        .Select(x => x.Context).Distinct()
-        .Select(x => new {
-            Context = x,
-            User = _dbContext.JobsTime.Include(x => x.Context).Include(x => x.User).Where(t => t.Context == x).Select(x => x.User).First(),
-            Start = _dbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.Start).Min(),
-            End = _dbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.End).Max(),
-            Time = _dbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => new JobDetailsTimeData {
-                Id = t.Id,
-                Start = t.Start,
-                End = t.End
-            }).ToList()
-		})
-        .Select(x => new JobDetailsData {
-            Id = x.Context.Id,
+		.Where(x => x.Id == id)
+		.Include(x => x.User)
+		.Include(x => x.Contractor)
+		.Select(x => new JobDetailsData {
+            Id = x.Id,
+            User = x.User,
+            Contractor = x.Contractor,
+			Date = x.Date,
+			Name = x.Name,
+            Comment = x.Comment,
+            Saved = x.Saved,
             Start = x.Start,
             End = x.End,
-            Contractor = x.Context.Contractor,
-            User = x.User,
-            Name = x.Context.Name,
-            Comment = x.Context.Comment,
-            Marked = x.Context.Marked,
-            MarkComment = x.Context.MarkComment,
-            Time = x.Time
+            Time = _dbContext.JobsTime.AsNoTracking().Where(t => t.Context.Id == id).Select(t => new JobDetailsTimeData {
+				Id = t.Id,
+				Start = t.Start,
+				End = t.End
+			}).ToList()
         })
         .FirstOrDefaultAsync();
 
@@ -72,11 +58,11 @@ public class JobsRepository(ApplicationDbContext dbContext) {
     }
 
     public async Task<bool> BuildJob(BuildJobData data) {
-		User? user = await dbContext.Users.FindAsync(data.UserId);
+		User? user = await _dbContext.Users.FindAsync(data.UserId);
 		if (user is null) return false;
 
-		await using (var transaction = await dbContext.Database.BeginTransactionAsync()) {
-			var activeGoals = await dbContext.ActiveGoals.AsNoTracking()
+		await using (var transaction = await _dbContext.Database.BeginTransactionAsync()) {
+			var activeGoals = await _dbContext.ActiveGoals.AsNoTracking()
 			.Include(x => x.User)
 			.Where(x => x.User != null && x.User.Id == data.UserId && x.CurrentlyActiveTime != null)
 			.Select(x => new { GoalId = x.Id, TimerId = x.CurrentlyActiveTime!.Value })
@@ -85,62 +71,72 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 			var activeTimersId = activeGoals.Values.ToHashSet();
 			var activeGoalsId = activeGoals.Keys.ToHashSet();
 
-			await dbContext.ActiveGoalsTime.Where(x => activeTimersId.Contains(x.Id)).ExecuteUpdateAsync(setters => setters.SetProperty(x => x.End, data.BuildDate));
-			await dbContext.ActiveGoals.Where(x => activeGoalsId.Contains(x.Id)).ExecuteUpdateAsync(setters => setters.SetProperty(x => x.CurrentlyActiveTime, x => null));
+			await _dbContext.ActiveGoalsTime.Where(x => activeTimersId.Contains(x.Id)).ExecuteUpdateAsync(setters => setters.SetProperty(x => x.End, data.BuildDate));
+			await _dbContext.ActiveGoals.Where(x => activeGoalsId.Contains(x.Id)).ExecuteUpdateAsync(setters => setters.SetProperty(x => x.CurrentlyActiveTime, x => null));
 
 			await transaction.CommitAsync();
 		}
 
-		var goals = await dbContext.ActiveGoals.AsNoTracking()
+		var goals = await _dbContext.ActiveGoals.AsNoTracking()
 			.Include(x => x.User).Where(x => x.User != null && x.User.Id == data.UserId)
 			.Include(x => x.Contractor)
 			.Include(x => x.Tasks.Where(x => x.Done))
 			.Include(x => x.GoalTime)
 			.ToListAsync();
 
-		Dictionary<int, Contractor> attachedContractors = [];
-
 		foreach (var goal in goals) {
-			Contractor? attachedContractor = null;
-			if (goal.Contractor is { Id: { } contractorId }) {
-				if (!attachedContractors.TryGetValue(contractorId, out attachedContractor)) {
-					attachedContractor = await dbContext.Contractors.FindAsync(contractorId);
-					if (attachedContractor is not null) {
-						attachedContractors.TryAdd(contractorId, attachedContractor);
-					}
-				}
-			}
+            if (goal.GoalTime.Count <= 0) continue;
+			var goalStart = goal.GoalTime.Select(x => x.Start).DefaultIfEmpty().Min();
+            DateOnly goalDate = DateOnly.FromDateTime(goalStart.DateTime);
+            string goalName = goal.Name.Trim();
 
-			JobContext context = new() {
-				Contractor = attachedContractor,
-				Comment = goal.Comment,
-				Name = goal.Name
-			};
+            var context = await _dbContext.Jobs.Include(x => x.User).Include(x => x.Contractor).Include(x => x.Time).Where(x => x.User != null && x.User.Id == data.UserId && x.Date == goalDate && x.Name == goalName).FirstOrDefaultAsync();
 
-			dbContext.Jobs.Update(context);
+            var goalTime = goal.GoalTime.Select(x => new JobTime() {
+				User = user,
+				Start = x.Start,
+				End = x.End
+			}).ToList();
 
-			foreach (var time in goal.GoalTime) {
-				JobTime jobTime = new() {
+            if(context is not null) {
+                context.Time.AddRange(goalTime);
+
+                context.Start = context.Time.Select(x => x.Start).DefaultIfEmpty().Max();
+                context.End = context.Time.Select(x => x.End).DefaultIfEmpty().Max();
+                context.Comment += $"{(context.Comment.Length > 0 ? "\n\n" : "")}{goal.Comment}";
+
+                context.ElapsedTime = context.Time.Aggregate(TimeSpan.Zero, (acc, time) => acc + (time.End - time.Start));
+            }
+            else {
+				var goalEnd = goal.GoalTime.Select(x => x.Start).DefaultIfEmpty().Max();
+				var goalElapsedTime = goal.TotalTime();
+
+				context ??= new() {
 					User = user,
-					Context = context,
-					Start = time.Start,
-					End = time.End
+					Contractor = goal.Contractor,
+					Name = goalName,
+					Comment = goal.Comment,
+					Date = goalDate,
+					Start = goalStart,
+					End = goalEnd,
+					ElapsedTime = goalElapsedTime,
+                    Time = goalTime
 				};
-
-				dbContext.JobsTime.Update(jobTime);
 			}
+
+			_dbContext.Jobs.Update(context);
 		}
 
-		await dbContext.SaveChangesAsync();
+		await _dbContext.SaveChangesAsync();
 
-		await using (var transaction = await dbContext.Database.BeginTransactionAsync()) {
-			await dbContext.ActiveGoals
+		await using (var transaction = await _dbContext.Database.BeginTransactionAsync()) {
+			await _dbContext.ActiveGoals
 				.Include(x => x.User)
 				.Include(x => x.GoalTime)
 				.Where(x => x.User != null && x.User.Id == data.UserId)
 				.ExecuteDeleteAsync();
 
-			await dbContext.ToDos
+			await _dbContext.ToDos
 				.Include(x => x.User).Where(x => x.User != null && x.User.Id == data.UserId)
 				.Include(x => x.Goal)
 				.Include(x => x.ActiveGoal)

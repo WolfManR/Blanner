@@ -14,20 +14,20 @@
 </FluentGrid>
 
 <FluentDataGrid TGridItem="JobListView" Pagination="_pagination" ItemsProvider="_itemsProvider"
-	GridTemplateColumns=".5fr 1fr 1fr .8fr 2fr 1fr 1fr .5fr 1fr .6fr">
+	GridTemplateColumns=".5fr 1fr 1fr 1fr .8fr 2fr 1fr 1fr .5fr .6fr">
 	<PropertyColumn Property="@(p => p.Id)" Title="№" />
+	<PropertyColumn Property="@(p => p.Date)" Format="dd.MM.yyyy" Sortable="true" />
 	<PropertyColumn Property="@(p => p.Start)" Format="dd.MM.yyyy HH:mm" Sortable="true" />
 	<PropertyColumn Property="@(p => p.End)" Format="dd.MM.yyyy HH:mm" Sortable="true" />
-	<PropertyColumn Property="@(p => p.TotalTime)" Format="@(UserSettings.TimeFormatterValue())" Title="Total time" Sortable="true" />
+	<PropertyColumn Property="@(p => p.ElapsedTime)" Format="@(UserSettings.TimeFormatterValue())" Title="Elapsed time" Sortable="true" />
 	<PropertyColumn Property="@(p => p.Name)" Sortable="true" />
 	<PropertyColumn Property="@(p => p.ContractorName)" Title="Contractor" Sortable="true" />
 	<PropertyColumn Property="@(p => p.UserName)" Title="User" Sortable="true" />
-	<TemplateColumn Title="Mark">
-		@if (context.Marked) {
+	<TemplateColumn Title="Saved">
+		@if (context.Saved) {
 			<FluentButton IconEnd="@(new Icons.Regular.Size16.Archive())" />
 		}
 	</TemplateColumn>
-	<PropertyColumn Property="@(p => p.MarkComment)" Title="Mark comment"/>
 	<TemplateColumn Title="Actions">
 		<FluentAnchor IconEnd="@(new Icons.Regular.Size16.Edit())" Href="@($"/Admin/Jobs/{context.Id}")" />
 		@* <FluentButton IconEnd="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => Delete(context.Id))" /> *@
@@ -40,14 +40,14 @@
 	class JobListView {
 		public int Id { get; set; }
 		public required string Name { get; set; }
+		public DateOnly Date { get; set; }
 		public string? ContractorName { get; set; }
 		public string? UserName { get; set; }
 		public required string UserId { get; set; }
 		public DateTimeOffset Start { get; set; }
 		public DateTimeOffset End { get; set; }
-		public TimeSpan TotalTime { get; set; }
-		public bool Marked { get; set; }
-		public string? MarkComment { get; set; }
+		public TimeSpan ElapsedTime { get; set; }
+		public bool Saved { get; set; }
 	}
 
 	GridItemsProvider<JobListView> _itemsProvider = default!;
@@ -57,33 +57,27 @@
 	protected override Task OnInitializedAsync() {
 		_itemsProvider = async req =>
 		{
-			var data = await DbContext.JobsTime.AsNoTracking()
+			var data = await DbContext.Jobs.AsNoTracking()
 				.Include(x => x.User)
-				.Include(x => x.Context).ThenInclude(x => x.Contractor)
-				.Select(x => x.Context).Distinct()
-				.Select(x => new {
-					Context = x,
-					User = DbContext.JobsTime.Include(x => x.Context).Include(x => x.User).Where(t => t.Context == x).Select(x => x.User).First(),
-					Start = DbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.Start).Min(),
-					End = DbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.End).Max(),
-					TotalTime = DbContext.JobsTime.Include(x => x.Context).Where(t => t.Context == x).Select(t => t.End - t.Start).ToList()
-				}).ToListAsync();
+				.Include(x => x.Time)
+				.Include(x => x.Contractor)
+				.Select(x => new JobListView {
+						Id = x.Id,
+						Date = x.Date,
+						Start = x.Start,
+						End = x.End,
+						UserId = x.User != null ? x.User.Id : "",
+						UserName = x.User != null ? x.User.UserName : "",
+						ContractorName = x.Contractor != null ? x.Contractor.Name : "",
+						Name = x.Name,
+						Saved = x.Saved,
+						ElapsedTime = x.ElapsedTime
+				})
+				.Skip(req.StartIndex)
+				.Take(req.Count ?? 10)
+				.ToListAsync(req.CancellationToken);
 
-			List<JobListView> result = data
-			.Select(x => new JobListView {
-					Id = x.Context.Id,
-					Start = x.Start,
-					End = x.End,
-					UserId = x.User != null ? x.User.Id : "",
-					UserName = x.User != null ? x.User.UserName : "",
-					ContractorName = x.Context.Contractor != null ? x.Context.Contractor.Name : "",
-					Name = x.Context.Name,
-					Marked = x.Context.Marked,
-					MarkComment = x.Context.MarkComment,
-					TotalTime = x.TotalTime.Aggregate((cum, t) => cum + t)
-				}).ToList();
-
-			return GridItemsProviderResult.From(result.Skip(req.StartIndex).Take(req.Count ?? 10).ToList(), data.Count);
+			return GridItemsProviderResult.From(data, await DbContext.Jobs.AsNoTracking().CountAsync(req.CancellationToken));
 		};
 		return Task.CompletedTask;
 	}

@@ -50,12 +50,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
 
         builder.Entity<JobContext>(e => {
+            e.HasOne(x => x.User).WithMany().OnDelete(DeleteBehavior.SetNull);
             e.HasOne(x => x.Contractor).WithMany().OnDelete(DeleteBehavior.NoAction);
-            e.HasMany<JobTime>().WithOne(x => x.Context).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.Time).WithOne(x => x.Context).OnDelete(DeleteBehavior.SetNull);
+            e.Property(x => x.Date).HasDefaultValue(DateOnly.FromDateTime(new DateTime(2024, 04, 07)));
         });
 
         builder.Entity<JobTime>(e => {
-            e.HasOne(x => x.Context).WithMany().OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Context).WithMany(x => x.Time).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.User).WithMany().OnDelete(DeleteBehavior.NoAction);
         });
 	}
