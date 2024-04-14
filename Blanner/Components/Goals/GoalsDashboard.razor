@@ -9,41 +9,50 @@
 @inject IDialogService DialogService
 @inject ILocalization Loc
 
+@implements IAsyncDisposable
+
 <PageTitle>@Loc.GoalsPageTitle</PageTitle>
 <CascadingValue Value="UserSettings">
 
-<FluentSplitter Orientation="Orientation.Horizontal" BarSize="6" Panel1MinSize="30%" Panel2MinSize="20%" Collapsed="@(_sidePanelMode is SidePanelMode.None)">
+<FluentSplitter Orientation="Orientation.Horizontal" Class="h-100" BarSize="6" Panel1MinSize="30%" Panel2MinSize="20%" Collapsed="@(_sidePanelMode is SidePanelMode.None)">
 
-    <Panel1>
-        <div>
-            <FluentToolbar>
-                <FluentButton Appearance="Appearance.Outline" OnClick="() => OpenGoals()">@Loc.BtnGoals</FluentButton>
-                <FluentButton Appearance="Appearance.Outline" OnClick="() => Complete()">@Loc.BtnCompleteJob</FluentButton>
-                <FluentButton Appearance="Appearance.Accent" OnClick="() => BuildJob()">@Loc.BtnBuildJob</FluentButton>
-                <FluentButton Appearance="Appearance.Accent" OnClick="() => OpenActiveGoalCreator()">@Loc.BtnCreate</FluentButton>
-            </FluentToolbar>
+	<Panel1>
+        <div class="m-2">
+			<FluentToolbar style="width: 100%;">
+				<FluentButton Appearance="Appearance.Accent" OnClick="() => OpenActiveGoalCreator()">@Loc.BtnCreate</FluentButton>
+				<FluentButton slot="end" Appearance="Appearance.Outline" OnClick="() => Complete()">@Loc.BtnCompleteJob</FluentButton>
+				<FluentButton slot="end" Class="me-2" Appearance="Appearance.Accent" OnClick="() => BuildJob()">@Loc.BtnBuildJob</FluentButton>
 
-            <ActiveGoals OnSelected="OpenDetails" OnOpenGoal="OpenGoal" />
-        </div>
-    </Panel1>
+                <FluentButton slot="end" Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size28.TasksApp())" OnClick="() => OpenGoals()"></FluentButton>
+			</FluentToolbar>
+
+			<ActiveGoals OnSelected="OpenDetails" OnOpenGoal="OpenGoal" />
+		</div>
+	</Panel1>
 
     <Panel2>
-        <FluentCard>
-			<CascadingValue Value="EditForm">
-				@if (_sidePanelMode is SidePanelMode.Create) {
-					<ActiveGoalCreator />
-				}
+        <div class="m-2">
+            <FluentCard>
+                <div class="mb-1 align-content-end">
+                    <FluentButton IconStart="@(new Icons.Regular.Size24.Dismiss())" OnClick="() => {_sidePanelMode = SidePanelMode.None;}"></FluentButton>
+                </div>
 
-				@if (_sidePanelMode is SidePanelMode.Edit) {
-					<ActiveGoalEditor />
-				}
-			</CascadingValue>
+		    	<CascadingValue Value="EditForm">
+		    		@if (_sidePanelMode is SidePanelMode.Create) {
+		    			<ActiveGoalCreator />
+		    		}
 
-            @if (_sidePanelMode is SidePanelMode.GoalsList) {
-                <Goals/>
-            }
+		    		@if (_sidePanelMode is SidePanelMode.Edit) {
+		    			<ActiveGoalEditor />
+		    		}
+		    	</CascadingValue>
 
-        </FluentCard>
+                @if (_sidePanelMode is SidePanelMode.GoalsList) {
+                    <Goals/>
+                }
+
+            </FluentCard>
+        </div>
     </Panel2>
 
     </FluentSplitter>
@@ -64,17 +73,17 @@
 
         GoalsClient.OnGoalHeaderEdited += OnGoalHeaderEdited;
         GoalsClient.OnGoalDeleted += OnGoalDeleted;
-        
+
         GoalsClient.OnGoalActivated += OnGoalActivated;
         GoalsClient.OnActiveGoalHeaderEdited += OnActiveGoalHeaderEdited;
         GoalsClient.OnActiveGoalDeleted += OnActiveGoalDeleted;
-        
+
         GoalsClient.OnTimerStopped += OnTimerStopped;
-        
+
         GoalsClient.OnActiveGoalTimerCreated += OnActiveGoalTimerCreated;
         GoalsClient.OnActiveGoalTimerEdited += OnActiveGoalTimerEdited;
         GoalsClient.OnActiveGoalTimerDeleted += OnActiveGoalTimerDeleted;
-        
+
         GoalsClient.OnJobsBuilded += OnJobsBuilded;
 
         await GoalsClient.Start();
@@ -102,7 +111,7 @@
         _sidePanelMode = SidePanelMode.GoalsList;
         StateHasChanged();
     }
-    
+
     private async Task OpenGoal(int id) {
         DialogParameters parameters = new() {
                 Title = "Goal",
@@ -245,6 +254,10 @@
     }
 
     #endregion
+
+    public async ValueTask DisposeAsync() {
+        await GoalsClient.DisposeAsync();
+    }
 
     enum SidePanelMode {
         None,
