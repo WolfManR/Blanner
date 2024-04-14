@@ -55,4 +55,5 @@ public interface ILocalization {
     string BtnGoals { get; }
     string BtnCompleteJob { get; }
     string BtnBuildJob { get; }
+    string BtnEdit { get; }
 }

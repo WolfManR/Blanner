@@ -43,21 +43,19 @@
 					</div>
 
 					@foreach (var item in value) {
+						<ContextMenuTrigger MenuId="GoalContextMenu" Data="@item">
 						<div class="row goals-table-item item align-items-baseline">
 							<div class="col-8 item-text">@item.Name</div>
 							<div class="col-4 d-flex justify-content-end align-bottom">
 								<div class="btn-toolbar" role="toolbar">
-									<div class="btn-group me-2" role="group">
+									<div class="btn-group" role="group">
 										<button class="btn btn-secondary" @onclick="() => PushToActive(item)" @onclick:stopPropagation="true"><i class="bi bi-activity"></i></button>
 										<button class="btn btn-success" @onclick="() => ActivateGoal(item)" @onclick:stopPropagation="true"><i class="bi bi-play-fill"></i></button>
-									</div>
-									<div class="btn-group" role="group">
-										<button class="btn btn-primary" @onclick="() => EditGoal(item)" @onclick:stopPropagation="true"><i class="bi bi-pencil"></i></button>
-										<button class="btn btn-danger" @onclick="() => DeleteGoal(item)" @onclick:stopPropagation="true"><i class="bi bi-trash3"></i></button>
 									</div>
 								</div>
 							</div>
 						</div>
+						</ContextMenuTrigger>
 					}
 				}
 			}
@@ -76,9 +74,6 @@
 
 	[SupplyParameterFromForm]
 	private NameFormModel NewGoal { get; set; } = new();
-
-	[Parameter]
-	public EventCallback<int> OnEdit { get; set; }
 
 	protected override async Task OnInitializedAsync() {
 		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -131,10 +126,6 @@
 		var response = await Http.PostAsJsonAsync(url, request);
 	}
 
-	private async Task EditGoal(GoalVM item) {
-		if (OnEdit.HasDelegate) await OnEdit.InvokeAsync(item.Id);
-	}
-
 	private Task DeleteContractorGroup(Value<Contractor, int> groupKey) {
 		// if (_goalsGroups.Remove(groupKey, out var list)) {
 		// 	_goals.RemoveAll(x => list.Contains(x));
@@ -146,14 +137,6 @@
 		TimerActivationData request = new(item.Id, item.ActiveGoalId, DateTimeOffset.Now, _userId);
 
 		var url = NavManager.ToAbsoluteUri("api/goals/start").AbsoluteUri;
-
-		var response = await Http.PostAsJsonAsync(url, request);
-	}
-
-	private async Task DeleteGoal(GoalVM item) {
-		GoalDeleteData request = new(item.Id, _userId);
-
-		var url = NavManager.ToAbsoluteUri("api/goals/delete").AbsoluteUri;
 
 		var response = await Http.PostAsJsonAsync(url, request);
 	}
@@ -279,35 +262,5 @@
 
 	class GoalsFilterForm {
 		public bool IncludeActive { get; set; }
-	}
-
-	class GoalVM() {
-		public int Id { get; private set; }
-		public string Name { get; set; } = string.Empty;
-		public Contractor? Contractor { get; set; }
-		public int? ActiveGoalId { get; set; }
-		// ToDo
-
-		public bool IsOnEdit { get; set; }
-
-		public GoalVM(GoalData data) : this() {
-			Id = data.Id;
-			Name = data.Name;
-			Contractor = data.Contractor;
-			ActiveGoalId = data.ActiveGoalId;
-		}
-
-		public void Set(ActiveGoalHeaderData data) {
-			Name = data.Name;
-			Contractor = data.Contractor;
-		}
-		public void Set(GoalHeaderData data) {
-			Name = data.Name;
-			Contractor = data.Contractor;
-		}
-
-		public void SetActiveData(ActiveGoalData data) {
-			ActiveGoalId = data.Id;
-		}
 	}
 }

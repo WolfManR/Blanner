@@ -74,6 +74,8 @@ public sealed class LocalizationManager : ILocalization, ILocalizationManager {
     public string BtnGoals => _localizationStrategy.BtnGoals;
     public string BtnCompleteJob => _localizationStrategy.BtnCompleteJob;
     public string BtnBuildJob => _localizationStrategy.BtnBuildJob;
+
+	public string BtnEdit => _localizationStrategy.BtnEdit;
 }
 
 public sealed class RussianLocalization : ILocalization {
@@ -124,6 +126,7 @@ public sealed class RussianLocalization : ILocalization {
     public string BtnGoals { get; } = "Задачи";
     public string BtnCompleteJob { get; } = "Завершить";
     public string BtnBuildJob { get; } = "Собрать работу";
+    public string BtnEdit { get; } = "Изменить";
 }
 
 public sealed class EnglishLocalization : ILocalization {
@@ -185,4 +188,5 @@ public sealed class EnglishLocalization : ILocalization {
     public string BtnGoals { get; } = "Goals";
     public string BtnCompleteJob { get; } = "Complete";
     public string BtnBuildJob { get; } = "Build Job";
+    public string BtnEdit { get; } = "Edit";
 }

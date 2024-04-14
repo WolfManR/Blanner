@@ -20,7 +20,7 @@
                 <FluentButton Appearance="Appearance.Outline" OnClick="() => OpenGoals()">@Loc.BtnGoals</FluentButton>
                 <FluentButton Appearance="Appearance.Outline" OnClick="() => Complete()">@Loc.BtnCompleteJob</FluentButton>
                 <FluentButton Appearance="Appearance.Accent" OnClick="() => BuildJob()">@Loc.BtnBuildJob</FluentButton>
-                    <FluentButton Appearance="Appearance.Accent" OnClick="() => OpenActiveGoalCreator()">@Loc.BtnCreate</FluentButton>
+                <FluentButton Appearance="Appearance.Accent" OnClick="() => OpenActiveGoalCreator()">@Loc.BtnCreate</FluentButton>
             </FluentToolbar>
 
             <ActiveGoals OnSelected="OpenDetails" OnOpenGoal="OpenGoal" />
@@ -40,7 +40,7 @@
 			</CascadingValue>
 
             @if (_sidePanelMode is SidePanelMode.GoalsList) {
-                <Goals OnEdit="OpenGoal"/>
+                <Goals/>
             }
 
         </FluentCard>
@@ -48,6 +48,8 @@
 
     </FluentSplitter>
 </CascadingValue>
+
+<GoalsContextMenu OnEdit="OpenGoal" />
 
 @code {
     private string _userId = "";

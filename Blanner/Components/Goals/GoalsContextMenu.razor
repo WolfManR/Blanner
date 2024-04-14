@@ -1,0 +1,40 @@
+﻿@inject ILocalization Loc
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject UserManager<User> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IBlazorContextMenuService blazorContextMenuService
+
+<ContextMenu Id="GoalContextMenu" AutoHide>
+	<Item OnClick="EditGoal"><i class="bi bi-pencil"></i> @Loc.BtnEdit</Item>
+	<Item OnClick="DeleteGoal"><i class="bi bi-trash3"></i> @Loc.BtnDelete</Item>
+</ContextMenu>
+
+@code {
+	private string _userId = "";
+
+	[Parameter]
+	public EventCallback<int> OnEdit { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		_userId = UserManager.GetUserId(state.User) ?? "";
+	}
+
+	private async Task EditGoal(ItemClickEventArgs e) {
+		if (e.Data is not GoalVM item) return;
+		if (!OnEdit.HasDelegate) return;
+		await blazorContextMenuService.HideMenu("GoalContextMenu");
+		await OnEdit.InvokeAsync(item.Id);
+	}
+
+	private async Task DeleteGoal(ItemClickEventArgs e) {
+		if (e.Data is not GoalVM item) return;
+		GoalDeleteData request = new(item.Id, _userId);
+
+		var url = NavManager.ToAbsoluteUri("api/goals/delete").AbsoluteUri;
+
+		var response = await Http.PostAsJsonAsync(url, request);
+	}
+}
