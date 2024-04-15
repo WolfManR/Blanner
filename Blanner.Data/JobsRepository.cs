@@ -77,11 +77,12 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 			await transaction.CommitAsync();
 		}
 
-		var goals = await _dbContext.ActiveGoals.AsNoTracking()
+		var goals = await _dbContext.ActiveGoals
 			.Include(x => x.User).Where(x => x.User != null && x.User.Id == data.UserId)
 			.Include(x => x.Contractor)
 			.Include(x => x.Tasks.Where(x => x.Done))
 			.Include(x => x.GoalTime)
+			.AsSplitQuery()
 			.ToListAsync();
 
 		foreach (var goal in goals) {
@@ -90,7 +91,13 @@ public class JobsRepository(ApplicationDbContext dbContext) {
             DateOnly goalDate = DateOnly.FromDateTime(goalStart.DateTime);
             string goalName = goal.Name.Trim();
 
-            var context = await _dbContext.Jobs.Include(x => x.User).Include(x => x.Contractor).Include(x => x.Time).Where(x => x.User != null && x.User.Id == data.UserId && x.Date == goalDate && x.Name == goalName).FirstOrDefaultAsync();
+            var context = await _dbContext.Jobs
+				.Include(x => x.User)
+                .Where(x => x.User != null && x.User.Id == data.UserId && x.Date == goalDate && x.Name == goalName)
+                .Include(x => x.Contractor)
+				.Include(x => x.Time)
+				.AsSplitQuery()
+				.FirstOrDefaultAsync();
 
             var goalTime = goal.GoalTime.Select(x => new JobTime() {
 				User = user,
@@ -132,12 +139,13 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 		await using (var transaction = await _dbContext.Database.BeginTransactionAsync()) {
 			await _dbContext.ActiveGoals
 				.Include(x => x.User)
-				.Include(x => x.GoalTime)
-				.Where(x => x.User != null && x.User.Id == data.UserId)
+                .Where(x => x.User != null && x.User.Id == data.UserId)
+                .Include(x => x.GoalTime)
 				.ExecuteDeleteAsync();
 
 			await _dbContext.ToDos
-				.Include(x => x.User).Where(x => x.User != null && x.User.Id == data.UserId)
+				.Include(x => x.User)
+				.Where(x => x.User != null && x.User.Id == data.UserId)
 				.Include(x => x.Goal)
 				.Include(x => x.ActiveGoal)
 				.Where(x => x.Done && x.Goal != null && x.ActiveGoal != null)
