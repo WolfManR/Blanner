@@ -9,8 +9,6 @@
 @inject IDialogService DialogService
 @inject ILocalization Loc
 
-@implements IAsyncDisposable
-
 <PageTitle>@Loc.GoalsPageTitle</PageTitle>
 <CascadingValue Value="UserSettings">
 
@@ -254,10 +252,6 @@
     }
 
     #endregion
-
-    public async ValueTask DisposeAsync() {
-        await GoalsClient.DisposeAsync();
-    }
 
     enum SidePanelMode {
         None,
