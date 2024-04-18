@@ -5,6 +5,7 @@
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ILocalization Loc
+@inject JobsClient JobsClient
 
 @attribute [Authorize]
 
@@ -12,17 +13,20 @@
 
 <div>
 	<div class="row sticky-top w-50 justify-content-start">
-		<input class="form-control col" type="date" value="@FilterForm.Start.ToString("O")" @onchange="OnFilterValueStartChanged" />
+		<EditForm FormName="JobsFilter" Model="@FilterForm">
+
+		<FluentDatePicker Value="@FilterForm.Start" ValueChanged="OnFilterValueStartChanged" />
 		<span class="col-auto"></span>
-		<input class="form-control col" type="date" value="@FilterForm.End.ToString("O")" @onchange="OnFilterValueEndChanged" />
+		<FluentDatePicker Value="@FilterForm.End" ValueChanged="OnFilterValueEndChanged" />
+		</EditForm>
 	</div>
 
 	<div class="mt-2">
-		@foreach (var group in _data.GroupBy(x => x.Date).OrderByDescending(x => x.Key)) {
+		@foreach (var group in JobHeaders.GroupBy(x => x.Date).OrderByDescending(x => x.Key)) {
 			<div class="card mb-3">
 				<div class="card-header">
 					<div class="row">
-						<span class="col-6 fw-bold">@group.Key.ToString("D")</span>
+						<span class="col-9 fw-bold">@group.Key.ToString("D")</span>
 						<span class="col-1 fw-bold">@group.Select(x => x.ElapsedTime).Aggregate((cum, t) => cum + t).ToString(UserSettings.TimeFormatterValue())</span>
 					</div>
 				</div>
@@ -34,12 +38,18 @@
 							@foreach (var item in contractorGroup) {
 								<div class="me-2 bg-dark bg-opacity-10 p-2 rounded-2 m-1">
 									<div class="row align-items-baseline">
-										<h5 class="col-6 fs-4">@item.Name</h5>
-										<span class="col-1">@item.ElapsedTime.ToString(UserSettings.TimeFormatterValue())</span>
-										<span class="col-1"><span>@item.Start.ToString(UserSettings.DateTimeFormatterValue())</span> - <span>@item.End.ToString(UserSettings.DateTimeFormatterValue())</span></span>
 										<div class="col-1">
-											<input class="form-check-input" type="checkbox" value="@item.Saved" />
+											@if (item.Saved) {
+												<FluentButton IconStart="@(new Icons.Filled.Size24.Database())" OnClick="() => SwitchStatusSaved(item)" />
+											}
+											else {
+												<FluentButton IconStart="@(new Icons.Regular.Size24.Database())" OnClick="() => SwitchStatusSaved(item)" />
+											}
 										</div>
+										
+										<h5 class="col-8 fs-4">@item.Name</h5>
+										<span class="col-1">@item.ElapsedTime.ToString(UserSettings.TimeFormatterValue())</span>
+										<span class="col-auto"><span>@item.Start.ToString(UserSettings.DateTimeFormatterValue())</span> - <span>@item.End.ToString(UserSettings.DateTimeFormatterValue())</span></span>
 									</div>
 
 									@if (item.Comment is { Length: > 0 }) {
@@ -59,10 +69,8 @@
 </div>
 
 @code {
-	private HubConnection? _hubConnection;
-
 	private string _userId = "";
-	private List<JobHeaderData> _data = new();
+	private List<JobHeaderData> JobHeaders { get; set; } = [];
 	public UserSettings? UserSettings { get; set; }
 
 	[SupplyParameterFromForm]
@@ -74,11 +82,10 @@
 
 		await LoadJobs();
 
-		_hubConnection = new HubConnectionBuilder().WithUrl(NavManager.GoalsHubUri()).Build();
+		JobsClient.OnJobsBuilded += OnJobsBuilded;
+		JobsClient.OnJobStatusSavedEdited += OnJobStatusSavedEdited;
 
-		_hubConnection.On<string>(nameof(IGoalsClient.JobsBuilded), OnJobsBuilded);
-
-		await _hubConnection.StartAsync();
+		await JobsClient.Start();
 	}
 
 	private async Task LoadJobs() {
@@ -86,17 +93,25 @@
 
 		var response = await Http.PostAsJsonAsync(url, new JobsListData(_userId, FilterForm.Start, FilterForm.End));
 		if (response.IsSuccessStatusCode) {
-			_data = (await response.Content.ReadFromJsonAsync<List<JobHeaderData>>()) ?? [];
+			JobHeaders = (await response.Content.ReadFromJsonAsync<List<JobHeaderData>>()) ?? [];
 		}
 	}
 
-	private async Task OnFilterValueStartChanged(ChangeEventArgs e) {
-		FilterForm.Start = e.Value<DateTime>(DateTime.MinValue);
+	private async Task SwitchStatusSaved(JobHeaderData item) {
+		JobSavedChangedData requestSavedChanged = new(item.Id, _userId, !item.Saved);
+
+		var url = NavManager.ToAbsoluteUri("api/jobs/update-status/saved").AbsoluteUri;
+
+		await Http.PostAsJsonAsync(url, requestSavedChanged);
+	}
+
+	private async Task OnFilterValueStartChanged(DateTime? date) {
+		FilterForm.Start = date.HasValue ? date.Value : DateTime.MinValue;
 		await LoadJobs();
 	}
 
-	private async Task OnFilterValueEndChanged(ChangeEventArgs e) {
-		FilterForm.End = e.Value<DateTime>(DateTime.MaxValue);
+	private async Task OnFilterValueEndChanged(DateTime? date) {
+		FilterForm.End = date.HasValue ? date.Value : DateTime.MinValue;
 		await LoadJobs();
 	}
 
@@ -116,18 +131,33 @@
 		await InvokeAsync(StateHasChanged);
 	}
 
+	private async Task OnJobStatusSavedEdited(int jobId, string userId, bool status) {
+		if (JobHeaders.Find(x => x.Id == jobId) is not { } job) return;
+
+		job.Saved = status;
+
+		await InvokeAsync(StateHasChanged);
+	}
+
 	class JobsFilterForm {
-		public DateTimeOffset Start { get; set; }
-		public DateTimeOffset End { get; set; }
+		public DateTime Start { get; set; }
+		public DateTime End { get; set; }
 
 		public static JobsFilterForm Create() {
-			var today = DateTimeOffset.Now;
+			var today = DateTime.Now;
 
 			JobsFilterForm form = new() {
-					Start = new DateTimeOffset(today.AddDays(-7).Date),
-					End = new DateTimeOffset(today.Date.AddDays(1))
+					Start = today.AddDays(-7).Date,
+					End = today.Date.AddDays(1)
 				};
 			return form;
 		}
+	}
+
+	class JobDaySection {
+		public DateOnly Date { get; set; }
+		public List<JobHeaderData> Jobs { get; set; } = [];
+		public Dictionary<Value<int, Contractor>, List<JobHeaderData>> Groups { get; set; } = [];
+		public JobHeaderData? Selected { get; set; }
 	}
 }

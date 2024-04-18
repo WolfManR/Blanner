@@ -5,6 +5,9 @@ public static class NavigationManagerExtensions {
 	public static Uri GoalsHubUri(this NavigationManager navManager) {
 		return navManager.ToAbsoluteUri("/hubs/goals");
 	}
+	public static Uri JobsHubUri(this NavigationManager navManager) {
+		return navManager.ToAbsoluteUri("/hubs/jobs");
+	}
 	public static Uri StickyNotesHubUri(this NavigationManager navManager) {
 		return navManager.ToAbsoluteUri("/hubs/sticky");
 	}

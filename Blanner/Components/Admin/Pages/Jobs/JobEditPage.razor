@@ -15,6 +15,7 @@
 		<div>
 			<FluentTextField Name="Name" @bind-Value="Name" Label="Name" Style="width: 40rem" Required />
 		</div>
+
 		<div class="mb-3">
 			<label>
 				Contractor
@@ -27,33 +28,18 @@
 			</label>
 		</div>
 
-		<div class="mb-3">
-			<label>
-				User
-				<InputSelect class="form-select" @bind-Value="User" DisplayName="User">
-					<option value="0">Empty</option>
-					@foreach (var item in _users) {
-						<option value="@item.Id">@item.Name</option>
-					}
-				</InputSelect>
-			</label>
-		</div>
+		<div>@User</div>
 
-		<div>
-		<FluentDatePicker @bind-Value="Start"/>
-		<FluentTimePicker @bind-Value="Start"/>
-		</div>
+		<div>@Start.GetValueOrDefault().ToString(UserSettings.DetailedDateTimeFormatterValue())</div>
 
-		<div>
-		<FluentDatePicker @bind-Value="End"/>
-		<FluentTimePicker @bind-Value="End"/>
-		</div>
+		<div>@End.GetValueOrDefault().ToString(UserSettings.DetailedDateTimeFormatterValue())</div>
 
 		<InputTextArea class="form-control" @bind-Value="Comment" style="height:40vh;" DisplayName="Comment" />
 
 		<FluentCheckbox @bind-Value="Saved"/>
 	</FluentStack>
 </EditForm>
+
 
 <div class="mt-2 mb-1">
 	<table class="table table-bordered">
@@ -92,27 +78,37 @@
 </div>
 
 <FluentStack>
+	<FluentButton OnClick="SaveAndClose">Save and Close</FluentButton>
 	<FluentButton OnClick="Save">Save</FluentButton>
+	<FluentButton OnClick="GoBack">Go Back</FluentButton>
 </FluentStack>
 
 @code {
 	private List<Contractor> _contractors = [];
 	private List<UserSelectListData> _users = [];
 	private string _userId = "";
+	private UserSettings? UserSettings { get; set; }
 
+	private int? _contractor;
+	private string? _name;
+	private string? _comment;
+	private bool _saved;
 
 	[Parameter]
 	public int Id { get; set; }
 
-	public string? User { get; set; }
-	public int? Contractor { get; set; }
-	public DateOnly Date { get; set; }
-	public string? Name { get; set; }
-	public string? Comment { get; set; }
-	public bool Saved { get; set; }
-	public DateTime? Start { get; set; }
-	public DateTime? End { get; set; }
-	public List<JobDetailsTimeData> Time { get; set; } = [];
+	private string? User { get; set; }
+	private DateOnly Date { get; set; }
+	private DateTime? Start { get; set; }
+	private DateTime? End { get; set; }
+
+
+	private int? Contractor { get; set; }
+	private string? Name { get; set; }
+	private string? Comment { get; set; }
+	private bool Saved { get; set; }
+
+	private List<JobDetailsTimeData> Time { get; set; } = [];
 
 	protected override async Task OnInitializedAsync() {
 		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -132,41 +128,54 @@
 
 		var entity = await Http.GetFromJsonAsync<JobDetailsData>(url);
 		if (entity is null) return;
-		User = entity.User?.Id;
-		Contractor = entity.Contractor?.Id;
+
+		User = entity.User?.UserName;
 		Date = entity.Date;
-		Name = entity.Name;
-		Comment = entity.Comment;
-		Saved = entity.Saved;
 		Start = entity.Start.LocalDateTime;
 		End = entity.End.LocalDateTime;
+
+		_contractor = Contractor = entity.Contractor?.Id;
+		_name = Name = entity.Name;
+		_comment = Comment = entity.Comment;
+		_saved = Saved = entity.Saved;
+
 		Time = entity.Time;
+
 		StateHasChanged();
 	}
 
 	private async Task Save() {
-		// if (Name is null) return;
+		var response = await SaveJobData();
+	}
 
-		// object request;
-		// string uri;
+	private async Task SaveAndClose() {
+		var response = await SaveJobData();
 
-		// if (Id == 0) {
-		// 	request = new JobCreationData(Name, _userId);
+		if (response?.IsSuccessStatusCode is true) GoBack();
+	}
 
-		// 	uri = "api/jobs/save";
-		// }
-		// else {
-		// 	if (User is null) return;
-		// 	int? contractorId = Contractor;
-		// 	request = new JobSaveData(Id, User, Name, contractorId);
+	private async Task<HttpResponseMessage?> SaveJobData() {
+		if (Name is null) return null;
+		if (_userId.NullOrEmpty()) return null;
 
-		// 	uri = "api/jobs/save";
-		// }
+		string url;
 
-		// var url = NavManager.ToAbsoluteUri(uri).AbsoluteUri;
+		if(Saved != _saved) {
+			JobSavedChangedData requestSavedChanged = new(Id, _userId, Saved);
 
-		// var response = await Http.PostAsJsonAsync(url, request);
+			url = NavManager.ToAbsoluteUri("api/jobs/update-status/saved").AbsoluteUri;
 
-		// if (response.IsSuccessStatusCode) NavManager.NavigateTo("/Admin/Jobs");
+			await Http.PostAsJsonAsync(url, requestSavedChanged);
+		}
+
+		JobHeaderSaveData request = new(Id, _userId, Name, Contractor, Comment ?? "");
+
+		url = NavManager.ToAbsoluteUri("api/jobs/save").AbsoluteUri;
+
+		return await Http.PostAsJsonAsync(url, request);
+	}
+
+	private void GoBack() {
+		NavManager.NavigateTo("/Admin/Jobs");
 	}
 }

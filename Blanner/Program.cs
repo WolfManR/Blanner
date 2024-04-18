@@ -64,6 +64,7 @@ builder.Services
 
 builder.Services
 	.AddScoped<StickyNoteClient>()
+	.AddScoped<JobsClient>()
 	.AddScoped<GoalsClient>();
 
 builder.Services.AddSignalR();
@@ -102,6 +103,7 @@ app.MapAdditionalIdentityEndpoints();
 app.MapRoutes();
 
 app.MapHub<GoalsHub>("/hubs/goals");
+app.MapHub<JobsHub>("/hubs/jobs");
 app.MapHub<StickyHub>("/hubs/sticky");
 
 app.Services.SetupCoravel();

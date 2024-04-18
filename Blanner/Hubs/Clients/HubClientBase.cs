@@ -9,7 +9,6 @@ public class HubClientBase : IAsyncDisposable {
 			.WithAutomaticReconnect()
 			.Build();
 
-	protected bool Started { get; private set; }
 	protected HubConnection Hub { get; private set; }
 
 	public bool IsConnected => Hub.State == HubConnectionState.Connected;
@@ -22,9 +21,8 @@ public class HubClientBase : IAsyncDisposable {
 	}
 
 	public async Task Start() {
-		if (!Started) {
+		if (Hub.State is HubConnectionState.Disconnected) {
 			await Hub.StartAsync();
-			Started = true;
 		}
 	}
 }

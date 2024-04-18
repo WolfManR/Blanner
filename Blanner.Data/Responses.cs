@@ -141,6 +141,13 @@ public class JobHeaderData {
 	public DateTimeOffset End { get; set; }
 }
 
+public class JobEditableHeaderData {
+	public User? User { get; set; }
+	public Contractor? Contractor { get; set; }
+	public string Name { get; set; } = string.Empty;
+	public string Comment { get; set; } = string.Empty;
+}
+
 public class JobDetailsData {
 	public int Id { get; set; }
 

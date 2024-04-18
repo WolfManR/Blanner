@@ -18,3 +18,5 @@ public sealed record GoalTimeEditData(int GoalId, int TimerId, string UserId, Da
 public sealed record CompleteJobData(string UserId, DateTimeOffset CompleteDate);
 public sealed record JobsListData(string UserId, DateTimeOffset Start, DateTimeOffset End);
 public sealed record BuildJobData(string UserId, DateTimeOffset BuildDate);
+public sealed record JobHeaderSaveData(int JobId, string UserId, string Name, int? ContractorId, string Comment = "");
+public sealed record JobSavedChangedData(int JobId, string UserId, bool Saved);

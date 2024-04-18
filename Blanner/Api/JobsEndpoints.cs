@@ -1,9 +1,7 @@
-﻿using Blanner.Data.Models;
-using Blanner.Data;
+﻿using Blanner.Data;
 using Microsoft.AspNetCore.Mvc;
 using Blanner.Hubs;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Blanner.Api;
 
@@ -14,6 +12,8 @@ public static class JobsEndpoints {
 		jobsGroup.MapPost("/", JobsEndpointsBehaviors.Jobs);
 		jobsGroup.MapGet("/{jobId}", JobsEndpointsBehaviors.Job);
 		jobsGroup.MapPost("/build", JobsEndpointsBehaviors.BuildJob);
+		jobsGroup.MapPost("/save", JobsEndpointsBehaviors.SaveHeaderData);
+		jobsGroup.MapPost("/update-status/saved", JobsEndpointsBehaviors.UpdateStatusSaved);
 	}
 }
 
@@ -28,15 +28,38 @@ public static class JobsEndpointsBehaviors {
 		return TypedResults.Json(data);
 	}
 
-
 	public static async Task<IResult> BuildJob(
 		[FromBody] BuildJobData request,
 		[FromServices] JobsRepository repository,
-		[FromServices] IHubContext<GoalsHub, IGoalsClient> hubContext) {
+		[FromServices] IHubContext<GoalsHub, IGoalsClient> goalsHubContext,
+		[FromServices] IHubContext<JobsHub, IJobsClient> jobsHubContext) {
 		var success = await repository.BuildJob(request);
 		if (!success) return TypedResults.BadRequest();
 
-		await hubContext.Clients.All.JobsBuilded(request.UserId);
+		await goalsHubContext.Clients.All.JobsBuilded(request.UserId);
+		await jobsHubContext.Clients.All.JobsBuilded(request.UserId);
+		return TypedResults.Ok();
+	}
+
+	public static async Task<IResult> SaveHeaderData(
+		[FromBody] JobHeaderSaveData request,
+		[FromServices] JobsRepository repository,
+		[FromServices] IHubContext<JobsHub, IJobsClient> hubContext) {
+		var context = await repository.Update(request);
+		if (context is null) return TypedResults.BadRequest();
+
+		await hubContext.Clients.All.JobHeaderEdited(context.Id, request.UserId, new() { User = context.User, Name = context.Name, Contractor = context.Contractor, Comment = context.Comment });
+		return TypedResults.Ok();
+	}
+
+	public static async Task<IResult> UpdateStatusSaved(
+		[FromBody] JobSavedChangedData request,
+		[FromServices] JobsRepository repository,
+		[FromServices] IHubContext<JobsHub, IJobsClient> hubContext) {
+		var context = await repository.Update(request);
+		if (context is null) return TypedResults.BadRequest();
+
+		await hubContext.Clients.All.JobStatusSavedEdited(context.Id, request.UserId, context.Saved);
 		return TypedResults.Ok();
 	}
 }

@@ -156,4 +156,45 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 
 		return true;
 	}
+
+	public async Task<JobContext> Update(JobHeaderSaveData data) {
+		JobContext context = await _dbContext.Jobs
+			   .Where(x => x.Id == data.JobId)
+			   .Include(x => x.User)
+			   .Include(x => x.Contractor)
+			   .AsSplitQuery()
+			   .FirstAsync();
+
+		context.Name = data.Name;
+		context.Comment = data.Comment;
+
+		switch (context.Contractor is null, data.ContractorId is null) {
+			case (false, true):
+				context.Contractor = null;
+				break;
+			case (_, false) when (context.Contractor?.Id != data.ContractorId):
+				Contractor? contractor = await _dbContext.Contractors.FindAsync(data.ContractorId);
+				if (contractor is null) break;
+				context.Contractor = contractor;
+				break;
+			default:
+				break;
+		}
+
+		await _dbContext.SaveChangesAsync();
+
+		return context;
+	}
+
+	public async Task<JobContext> Update(JobSavedChangedData data) {
+		JobContext context = await _dbContext.Jobs
+			   .Where(x => x.Id == data.JobId)
+			   .FirstAsync();
+
+		context.Saved = data.Saved;
+
+		await _dbContext.SaveChangesAsync();
+
+		return context;
+	}
 }
