@@ -1,0 +1,40 @@
+﻿@using System.Threading
+@using Blanner.Services
+
+@inject ClipboardService ClipboardService
+@implements IDisposable
+
+<div style="position:absolute; top: 10px; right: 10px;">
+    <button class="btn btn-primary" @onclick="Copy" disabled=@state.IsDisabled>
+        <i class="@state.ClassName"></i>
+    </button>
+</div>
+
+@code {
+
+    private ElementReference _codeElement;
+
+    [Parameter] 
+    public string? TextToCopy { get; set; }
+
+
+    CancellationTokenSource cts = new();
+    State state = new("Copy", "bi bi-clipboard");
+
+    async Task Copy() {
+        if (TextToCopy is null) return;
+
+        var temp = state;
+        state = new("Copied", "bi bi-clipboard-check-fill", IsDisabled: true);
+        await ClipboardService.WriteTextAsync(TextToCopy);
+        await Task.Delay(TimeSpan.FromSeconds(2), cts.Token);
+        state = temp;
+    }
+
+    public void Dispose() {
+        cts.Cancel(); // Cancel Task.Delay
+        cts.Dispose();
+    }
+
+    record State(string Text, string ClassName, bool IsDisabled = false);
+}

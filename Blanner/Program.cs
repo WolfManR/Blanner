@@ -7,6 +7,7 @@ using Blanner.Extensions;
 using Blanner.Hubs;
 using Blanner.Hubs.Clients;
 using Blanner.Localizations;
+using Blanner.Services;
 
 using Coravel;
 using Coravel.Events.Interfaces;
@@ -123,6 +124,8 @@ internal static class HostExtensions {
 		services.AddSingleton<LocalizationManager>();
 		services.AddSingleton<ILocalizationManager>(p => p.GetRequiredService<LocalizationManager>());
 		services.AddSingleton<ILocalization>(p => p.GetRequiredService<LocalizationManager>());
+
+		services.AddScoped<ClipboardService>();
 
 		services.RegisterScheduledJobs();
 		services.RegisterEvents();
