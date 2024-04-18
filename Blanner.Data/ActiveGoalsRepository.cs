@@ -83,7 +83,7 @@ public class ActiveGoalsRepository(ApplicationDbContext dbContext) {
 
 	public async Task<ActiveGoal?> Delete(int goalId) {
 		ActiveGoal? goal = await _dbContext.ActiveGoals
-			.Include(x => x.Goal).ThenInclude(x => x.Tasks)
+			.Include(x => x.Goal).ThenInclude(x => x!.Tasks)
 			.Include(x => x.Tasks)
 			.FirstOrDefaultAsync(x => x.Id == goalId);
 		if (goal is null) return null;
@@ -140,9 +140,7 @@ public class ActiveGoalsRepository(ApplicationDbContext dbContext) {
 			.FirstAsync(x => x.Id == goalId);
 		if (goal.CurrentlyActiveTime is null) throw new InvalidOperationException("Timer already stopped");
 
-		ActiveGoalTime? activeTime = goal.GoalTime.Find(x => x.Id == goal.CurrentlyActiveTime);
-		if (activeTime is null) throw new InvalidOperationException("Timer set but not exist");
-
+		ActiveGoalTime? activeTime = goal.GoalTime.Find(x => x.Id == goal.CurrentlyActiveTime) ?? throw new InvalidOperationException("Timer set but not exist");
 		activeTime.End = timeStopDate;
 		goal.CurrentlyActiveTime = null;
 

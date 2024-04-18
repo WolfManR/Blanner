@@ -91,7 +91,7 @@ public static class GoalsEndpointsBehaviors {
 		ActiveGoal goal = await goalsRepository.Activate(request.GoalId.Value, request.ActivationDate);
 		_ = await activeGoalsRepository.StartTimer(goal, request.ActivationDate);
 
-		await goalsHubContext.Clients.All.GoalActivated(goal.Goal.Id, goal.Id, request.UserId, new(goal));
+		await goalsHubContext.Clients.All.GoalActivated(goal.Goal?.Id ?? 0, goal.Id, request.UserId, new(goal));
 
 		return TypedResults.Ok();
 	}
