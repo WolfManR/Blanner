@@ -25,11 +25,8 @@
 		<InputCheckbox @bind-Value="FilterForm.IncludeActive" id="chbInsertActive" />
 	</EditForm> *@
 
-	<div class="goals-table">
-		<div class="goals-table-header row fw-bold pb-1 align-items-baseline">
-			<div class="col-10">@Loc.NameLabel</div>
-			<div class="col-2"></div>
-		</div>
+	<div class="goals-table mt-2">
+		
 		<div class="goals-table-body">
 			@foreach (var (key, value) in _goalsGroups) {
 				@if (value.Count > 0) {
