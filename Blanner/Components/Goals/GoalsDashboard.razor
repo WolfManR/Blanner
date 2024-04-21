@@ -17,11 +17,11 @@
 	<Panel1>
         <div class="m-2">
 			<FluentToolbar style="width: 100%;">
-				<FluentButton Appearance="Appearance.Accent" OnClick="() => OpenActiveGoalCreator()">@Loc.BtnCreate</FluentButton>
-				<FluentButton slot="end" Appearance="Appearance.Outline" OnClick="() => Complete()">@Loc.BtnCompleteJob</FluentButton>
-				<FluentButton slot="end" Class="me-2" Appearance="Appearance.Accent" OnClick="() => BuildJob()">@Loc.BtnBuildJob</FluentButton>
+				<FluentButton Appearance="Appearance.Outline" OnClick="() => Complete()">@Loc.BtnCompleteJob</FluentButton>
+				<FluentButton Class="me-2" Appearance="Appearance.Accent" OnClick="() => BuildJob()">@Loc.BtnBuildJob</FluentButton>
 
                 <FluentButton slot="end" Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size28.TasksApp())" OnClick="() => OpenGoals()"></FluentButton>
+				<FluentButton slot="end" Appearance="Appearance.Accent" OnClick="() => OpenActiveGoalCreator()">@Loc.BtnCreate</FluentButton>
 			</FluentToolbar>
 
 			<ActiveGoals OnSelected="OpenDetails" OnOpenGoal="OpenGoal" />
