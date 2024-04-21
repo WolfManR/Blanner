@@ -28,30 +28,32 @@
 	<div class="goals-table mt-2">
 		
 		<div class="goals-table-body">
-			@foreach (var (key, value) in _goalsGroups) {
-				@if (value.Count > 0) {
-					Contractor? keyValue = key;
-
+			@foreach (var group in _goals.GroupBy(x => new Value<Contractor, int>(x.Contractor)).OrderBy(x => x.Key.ToString())) {
+				Contractor? keyValue = group.Key;
+				
+				<ContextMenuTrigger MenuId="GoalContractorGroupContextMenu" Data="@group.Key">
 					<div class="row goals-table-item item-header align-items-baseline">
 						<div class="col-10 fw-bold">@(keyValue?.Name ?? Loc.ContractorNoneName)</div>
 						<div class="col-2 d-flex justify-content-end">
-							<button class="btn btn-danger" @onclick="() => DeleteContractorGroup(key)" disabled><i class="bi bi-trash3"></i></button>
+							<button class="btn btn-danger" @onclick="() => DeleteContractorGroup(group.Key)" disabled><i class="bi bi-trash3"></i></button>
 						</div>
 					</div>
+				</ContextMenuTrigger>
 
-					@foreach (var item in value) {
+				@if (group.Count() > 0) {
+					@foreach (var item in group) {
 						<ContextMenuTrigger MenuId="GoalContextMenu" Data="@item">
-						<div class="row goals-table-item item align-items-baseline">
-							<div class="col-8 item-text">@item.Name</div>
-							<div class="col-4 d-flex justify-content-end align-bottom">
-								<div class="btn-toolbar" role="toolbar">
-									<div class="btn-group" role="group">
-										<button class="btn btn-secondary" @onclick="() => PushToActive(item)" @onclick:stopPropagation="true"><i class="bi bi-activity"></i></button>
-										<button class="btn btn-success" @onclick="() => ActivateGoal(item)" @onclick:stopPropagation="true"><i class="bi bi-play-fill"></i></button>
+							<div class="row goals-table-item item align-items-baseline">
+								<div class="col-8 item-text">@item.Name</div>
+								<div class="col-4 d-flex justify-content-end align-bottom">
+									<div class="btn-toolbar" role="toolbar">
+										<div class="btn-group" role="group">
+											<button class="btn btn-secondary" @onclick="() => PushToActive(item)" @onclick:stopPropagation="true"><i class="bi bi-activity"></i></button>
+											<button class="btn btn-success" @onclick="() => ActivateGoal(item)" @onclick:stopPropagation="true"><i class="bi bi-play-fill"></i></button>
+										</div>
 									</div>
 								</div>
 							</div>
-						</div>
 						</ContextMenuTrigger>
 					}
 				}
@@ -64,7 +66,6 @@
 @code {
 	private string _userId = "";
 	private List<GoalVM> _goals = new();
-	private Dictionary<Value<Contractor, int>, List<GoalVM>> _goalsGroups = new();
 
 	[SupplyParameterFromForm]
 	private GoalsFilterForm FilterForm { get; set; } = new();
@@ -100,18 +101,11 @@
 			});
 
 		var response = await Http.GetFromJsonAsync<List<GoalData>>(url);
-		SetGoalsQuery(response);
-	}
-
-	private void SetGoalsQuery(List<GoalData>? data) {
-		if (data is null) {
+		if (response is null) {
 			_goals.Clear();
-			_goalsGroups.Clear();
 			return;
 		}
-		_goals = data.Select(x=> new GoalVM(x)).ToList();
-		var groups = _goals.GroupBy(x => new Value<Contractor, int>(x.Contractor));
-		_goalsGroups = groups.ToDictionary(x => x.Key, x => x.ToList());
+		_goals = response.Select(x => new GoalVM(x)).ToList();
 	}
 
 	private async Task CreateGoal(EditContext editContext) {
@@ -155,12 +149,6 @@
 		if (goal is not null) return;
 		goal = new(data);
 		_goals.Insert(0, goal);
-		Value<Contractor, int> contractor = new(data.Contractor);
-		List<GoalVM>? goals;
-		if (!_goalsGroups.TryGetValue(contractor, out goals)) {
-			_goalsGroups.Add(contractor, goals ??= new());
-		}
-		goals.Insert(0, goal);
 
 		await InvokeAsync(StateHasChanged);
 	}
@@ -174,18 +162,6 @@
 
 		goal.Set(data);
 
-		if (previousContractor?.Id != currentContractor?.Id) {
-			if (_goalsGroups.TryGetValue(new(previousContractor), out var previousGroup)) {
-				previousGroup.Remove(goal);
-			}
-			if (_goalsGroups.TryGetValue(new(currentContractor), out var currentGroup)) {
-				currentGroup.Add(goal);
-			}
-			else {
-				_goalsGroups.TryAdd(new(currentContractor), new() { goal });
-			}
-		}
-
 		await InvokeAsync(StateHasChanged);
 	}
 
@@ -195,10 +171,6 @@
 
 		_goals.Remove(goal);
 		Value<Contractor, int> contractor = new(goal.Contractor);
-		if (_goalsGroups.TryGetValue(contractor, out var goals)) {
-			goals.Remove(goal);
-			if (goals.Count == 0) _goalsGroups.Remove(contractor);
-		}
 
 		await InvokeAsync(StateHasChanged);
 	}
@@ -221,18 +193,6 @@
 		var currentContractor = data.Contractor;
 
 		goal.Set(data);
-
-		if (previousContractor?.Id != currentContractor?.Id) {
-			if (_goalsGroups.TryGetValue(new(previousContractor), out var previousGroup)) {
-				previousGroup.Remove(goal);
-			}
-			if (_goalsGroups.TryGetValue(new(currentContractor), out var currentGroup)) {
-				currentGroup.Add(goal);
-			}
-			else {
-				_goalsGroups.TryAdd(new(currentContractor), new() { goal });
-			}
-		}
 
 		await InvokeAsync(StateHasChanged);
 	}
