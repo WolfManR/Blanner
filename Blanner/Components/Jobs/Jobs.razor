@@ -92,7 +92,7 @@
 	private async Task LoadJobs() {
 		var url = NavManager.JobsApiUri();
 
-		var response = await Http.PostAsJsonAsync(url, new JobsListData(_userId, FilterForm.Start, FilterForm.End));
+		var response = await Http.PostAsJsonAsync(url, new JobsListData(_userId, DateOnly.FromDateTime(FilterForm.Start), DateOnly.FromDateTime(FilterForm.End)));
 		if (response.IsSuccessStatusCode) {
 			JobHeaders = (await response.Content.ReadFromJsonAsync<List<JobHeaderData>>()) ?? [];
 		}

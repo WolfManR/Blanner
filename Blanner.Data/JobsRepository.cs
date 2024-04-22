@@ -7,13 +7,13 @@ namespace Blanner.Data;
 public class JobsRepository(ApplicationDbContext dbContext) {
     private readonly ApplicationDbContext _dbContext = dbContext;
 
-    public async Task<List<JobHeaderData>> List(string userId, DateTimeOffset start, DateTimeOffset end) {
+    public async Task<List<JobHeaderData>> List(string userId, DateOnly start, DateOnly end) {
         var data = await _dbContext.Jobs.AsNoTracking()
                  .Include(x => x.User)
                  .Where(x => x.User != null && x.User.Id == userId)
                  .Include(x => x.Time)
                  .Include(x => x.Contractor)
-                 .Where(x => x.End > start && x.Start < end)
+                 .Where(x => x.Date > start && x.Date < end)
                  .Select(x => new JobHeaderData {
 					 Id = x.Id,
 					 User = x.User,
