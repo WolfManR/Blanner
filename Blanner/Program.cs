@@ -18,103 +18,138 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.FluentUI.AspNetCore.Components;
 
-using System.Reflection;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+using System.Reflection;
 
 Value<Contractor?, int>.SetKeySelector(x => x?.Id ?? 0);
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-	.AddInteractiveServerComponents();
+Log.Logger = new LoggerConfiguration()
+	.Enrich.FromLogContext()
+	.WriteTo.Console()
+	.CreateBootstrapLogger();
 
-builder.Services.AddCascadingAuthenticationState();
-builder.Services.AddScoped<IdentityUserAccessor>();
-builder.Services.AddScoped<IdentityRedirectManager>();
-builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+try {
+	Log.Information("Starting web application");
 
-builder.Services.AddAuthentication(options =>
-	{
-		options.DefaultScheme = IdentityConstants.ApplicationScheme;
-		options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-	})
-	.AddIdentityCookies();
+	var builder = WebApplication.CreateBuilder(args);
 
-var dbProvider = builder.Configuration["DBProvider"] ?? throw new InvalidOperationException("Database provider not selected.");
-var connectionString = builder.Configuration.GetConnectionString(dbProvider) ?? throw new InvalidOperationException($"Connection string '{dbProvider}' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options => {
-	options.UseSqlServer(connectionString, ctx => ctx.MigrationsAssembly(Assembly.GetAssembly(typeof(SQLServerMigrations.Mark))?.FullName)); 
-});
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+	builder.Services.AddSerilog((services, logContext) => logContext
+		.ReadFrom.Configuration(builder.Configuration)
+		.ReadFrom.Services(services)
+		.Enrich.FromLogContext()
+		.WriteTo.Console()
+		.WriteTo.File(
+			Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LogFiles", "Application", "diagnostics.txt"),
+			rollingInterval: RollingInterval.Day,
+			fileSizeLimitBytes: 10 * 1024 * 1024,
+			retainedFileCountLimit: 2,
+			rollOnFileSizeLimit: true,
+			shared: true,
+			flushToDiskInterval: TimeSpan.FromSeconds(1)));
 
-builder.Services.AddIdentityCore<User>(options => options.SignIn.RequireConfirmedAccount = true)
-	.AddEntityFrameworkStores<ApplicationDbContext>()
-	.AddSignInManager()
-	.AddDefaultTokenProviders();
+	builder.Services.RegisterServices(builder.Configuration);
 
-builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
+	var app = builder.Build();
 
-// Coravel
-builder.Services
-	.AddScheduler()
-	.AddQueue()
-	.AddEvents();
+	// Configure the HTTP request pipeline.
+	if (app.Environment.IsDevelopment()) {
+		app.UseMigrationsEndPoint();
+	}
+	else {
+		app.UseExceptionHandler("/Error", createScopeForErrors: true);
+		// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+		app.UseHsts();
+	}
 
-builder.Services
-	.AddBlazorContextMenu();
+	app.UseHttpsRedirection();
 
-builder.Services
-	.AddScoped<StickyNoteClient>()
-	.AddScoped<JobsClient>()
-	.AddScoped<GoalsClient>();
+	app.UseStaticFiles();
+	app.UseAntiforgery();
 
-builder.Services.AddSignalR();
-builder.Services.AddHttpClient();
+	app.UseSerilogRequestLogging();
 
-builder.Services.AddFluentUIComponents();
-builder.Services.AddDataGridEntityFrameworkAdapter();
+	app.MapRazorComponents<App>()
+		.AddInteractiveServerRenderMode();
 
-builder.Services.RegisterServices();
+	// Add additional endpoints required by the Identity /Account Razor components.
+	app.MapAdditionalIdentityEndpoints();
 
-var app = builder.Build();
+	app.MapRoutes();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-	app.UseMigrationsEndPoint();
+	app.MapHub<GoalsHub>("/hubs/goals");
+	app.MapHub<JobsHub>("/hubs/jobs");
+	app.MapHub<StickyHub>("/hubs/sticky");
+
+	app.Services.SetupCoravel();
+
+	app.Run();
 }
-else
-{
-	app.UseExceptionHandler("/Error", createScopeForErrors: true);
-	// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-	app.UseHsts();
+catch(Exception ex) {
+	Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally {
+	Log.CloseAndFlush();
 }
 
-app.UseHttpsRedirection();
-
-app.UseStaticFiles();
-app.UseAntiforgery();
-
-app.MapRazorComponents<App>()
-	.AddInteractiveServerRenderMode();
-
-// Add additional endpoints required by the Identity /Account Razor components.
-app.MapAdditionalIdentityEndpoints();
-
-app.MapRoutes();
-
-app.MapHub<GoalsHub>("/hubs/goals");
-app.MapHub<JobsHub>("/hubs/jobs");
-app.MapHub<StickyHub>("/hubs/sticky");
-
-app.Services.SetupCoravel();
-
-app.Run();
 
 
 internal static class HostExtensions {
 
-	public static void RegisterServices(this IServiceCollection services) {
+	public static void RegisterServices(this IServiceCollection services, ConfigurationManager configuration) {
+		// Add services to the container.
+		services.AddRazorComponents()
+			.AddInteractiveServerComponents();
+
+		services.AddCascadingAuthenticationState();
+		services.AddScoped<IdentityUserAccessor>();
+		services.AddScoped<IdentityRedirectManager>();
+		services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+
+		services
+			.AddAuthentication(options =>
+			{
+				options.DefaultScheme = IdentityConstants.ApplicationScheme;
+				options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+			})
+			.AddIdentityCookies();
+
+		var dbProvider = configuration["DBProvider"] ?? throw new InvalidOperationException("Database provider not selected.");
+		var connectionString = configuration.GetConnectionString(dbProvider) ?? throw new InvalidOperationException($"Connection string '{dbProvider}' not found.");
+		services.AddDbContext<ApplicationDbContext>(options => {
+			options.UseSqlServer(connectionString, ctx => ctx.MigrationsAssembly(Assembly.GetAssembly(typeof(SQLServerMigrations.Mark))?.FullName));
+		});
+		services.AddDatabaseDeveloperPageExceptionFilter();
+
+		services.AddIdentityCore<User>(options => options.SignIn.RequireConfirmedAccount = true)
+			.AddEntityFrameworkStores<ApplicationDbContext>()
+			.AddSignInManager()
+			.AddDefaultTokenProviders();
+
+		services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
+
+		// Coravel
+		services
+			.AddScheduler()
+			.AddQueue()
+			.AddEvents();
+
+		services
+			.AddBlazorContextMenu();
+
+		services
+			.AddScoped<StickyNoteClient>()
+			.AddScoped<JobsClient>()
+			.AddScoped<GoalsClient>();
+
+		services.AddSignalR();
+		services.AddHttpClient();
+
+		services.AddFluentUIComponents();
+		services.AddDataGridEntityFrameworkAdapter();
+
+
+
 		services.AddScoped<ContractorsRepository>();
 		services.AddScoped<GoalsRepository>();
 		services.AddScoped<ActiveGoalsRepository>();
