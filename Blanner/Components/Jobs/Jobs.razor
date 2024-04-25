@@ -15,63 +15,84 @@
 	<div class="row sticky-top w-50 justify-content-start">
 		<EditForm FormName="JobsFilter" Model="@FilterForm">
 
-		<FluentDatePicker Value="@FilterForm.Start" ValueChanged="OnFilterValueStartChanged" />
-		<span class="col-auto"></span>
-		<FluentDatePicker Value="@FilterForm.End" ValueChanged="OnFilterValueEndChanged" />
+			<FluentDatePicker Value="@FilterForm.Start" ValueChanged="OnFilterValueStartChanged" />
+			<span class="col-auto"></span>
+			<FluentDatePicker Value="@FilterForm.End" ValueChanged="OnFilterValueEndChanged" />
 		</EditForm>
 	</div>
 
-	<div class="mt-2">
-		@foreach (var group in JobHeaders.GroupBy(x => x.Date).OrderByDescending(x => x.Key)) {
-			<div class="card mb-3">
-				<div class="card-header">
-					<div class="row">
-						<span class="col-9 fw-bold">@group.Key.ToString("D")</span>
-						<span class="col-1 fw-bold">@group.Select(x => x.ElapsedTime).Aggregate((cum, t) => cum + t).ToString(UserSettings.TimeFormatterValue())</span>
-					</div>
-				</div>
-				<div class="card-body">
-					@foreach (var contractorGroup in group.GroupBy(x => new Value<Contractor, int>(x.Contractor))) {
-						<div>
-							<h3 class="col-3 mb-2 mt-1">@(contractorGroup.Key.StoredValue?.Name ?? Loc.ContractorNoneName)</h3>
+	<FluentSplitter Orientation="Orientation.Horizontal" Class="h-100" BarSize="6" Panel1MinSize="30%" Panel2MinSize="20%" Collapsed="@(Selected is null)">
 
-							@foreach (var item in contractorGroup) {
-								<div class="me-2 bg-dark bg-opacity-10 p-2 rounded-2 m-1">
-									<div class="row align-items-baseline">
-										<div class="col-1">
-											@if (item.Saved) {
-												<FluentButton IconStart="@(new Icons.Filled.Size24.Database())" OnClick="() => SwitchStatusSaved(item)" />
-											}
-											else {
-												<FluentButton IconStart="@(new Icons.Regular.Size24.Database())" OnClick="() => SwitchStatusSaved(item)" />
-											}
-										</div>
-										
-										<h5 class="col-8 fs-4">@item.Name</h5>
-										<span class="col-1">@item.ElapsedTime.ToString(UserSettings.TimeFormatterValue())</span>
-										<span class="col-auto"><span>@item.Start.ToString(UserSettings.DateTimeFormatterValue())</span> - <span>@item.End.ToString(UserSettings.DateTimeFormatterValue())</span></span>
-									</div>
+		<Panel1>
+			<div class="mt-2 me-3" style="height: 88dvh; overflow-y: auto;">
+				@foreach (var group in JobHeaders.GroupBy(x => x.Date).OrderByDescending(x => x.Key)) {
+					<div class="card mb-3">
+						<div class="card-header">
+							<div class="row">
+								<span class="col-9 fw-bold">@group.Key.ToString("D")</span>
+								<span class="col-1 fw-bold">@group.Select(x => x.ElapsedTime).Aggregate((cum, t) => cum + t).ToString(UserSettings.TimeFormatterValue())</span>
+							</div>
+						</div>
+						<div class="card-body">
+							@foreach (var contractorGroup in group.GroupBy(x => new Value<Contractor, int>(x.Contractor))) {
+								<div>
+									<h3 class="col-3 mb-2 mt-1">@(contractorGroup.Key.StoredValue?.Name ?? Loc.ContractorNoneName)</h3>
 
-									@if (item.Comment is { Length: > 0 }) {
-										<div class="me-3 mt-2 bg-white p-2 rounded-1 position-relative">
-											<CopyToClipboard TextToCopy="@item.Comment"/>
-											<p>@((MarkupString) @item.Comment.Replace("\n", "<br/>"))</p>
+									@foreach (var item in contractorGroup) {
+										<div class="me-2 @(item == Selected ? "bg-primary bg-opacity-25" : "bg-dark bg-opacity-10") p-2 rounded-2 m-1" @onclick="() => Select(item)">
+											<div class="row align-items-baseline">
+												<div class="col-auto row-cols-2">
+													<FluentButton Class="col me-1" IconStart="@(item.Saved ? new Icons.Filled.Size24.Database() : new Icons.Regular.Size24.Database())" OnClick="() => SwitchStatusSaved(item)" />
+
+													@if (item.Comment is { Length: > 0 }) {
+														<i class="col bi bi-pencil text-center"></i>
+													}
+												</div>
+
+												<h5 class="col-7 fs-4">@item.Name</h5>
+												<span class="col-1">@item.ElapsedTime.ToString(UserSettings.TimeFormatterValue())</span>
+												<span class="col-md-auto"><span>@item.Start.ToString(UserSettings.DateTimeFormatterValue())</span> - <span>@item.End.ToString(UserSettings.DateTimeFormatterValue())</span></span>
+											</div>
 										</div>
 									}
-									
 								</div>
 							}
 						</div>
-					}
-				</div>
+					</div>
+				}
 			</div>
-		}
-	</div>
+		</Panel1>
+
+		<Panel2>
+			<div class="m-2" style="height: 88dvh; overflow-y: auto;">
+				<FluentCard>
+					<div class="mb-2 align-content-end">
+						@if (Selected?.Comment is { Length: > 0 })
+						{
+							<CopyToClipboard TextToCopy="@Selected.Comment" />
+						}
+						<FluentButton IconStart="@(new Icons.Regular.Size24.Dismiss())" OnClick="() => {Selected = null;}"></FluentButton>
+					</div>
+
+					<h4>@Selected?.Name</h4>
+
+					@if (Selected?.Comment is { Length: > 0 }) {
+						<div class="me-3 mt-2 bg-white p-2 rounded-1 position-relative">
+							<p>@((MarkupString) @Selected.Comment.Replace("\n", "<br/>"))</p>
+						</div>
+					}
+
+				</FluentCard>
+			</div>
+		</Panel2>
+
+	</FluentSplitter>
 </div>
 
 @code {
 	private string _userId = "";
 	private List<JobHeaderData> JobHeaders { get; set; } = [];
+	private JobHeaderData? Selected { get; set; }
 	public UserSettings? UserSettings { get; set; }
 
 	[SupplyParameterFromForm]
@@ -96,6 +117,13 @@
 		if (response.IsSuccessStatusCode) {
 			JobHeaders = (await response.Content.ReadFromJsonAsync<List<JobHeaderData>>()) ?? [];
 		}
+	}
+
+	private void Select(JobHeaderData item) {
+		if (item.Comment is not { Length: > 0 }) {
+			return;
+		}
+		Selected = item;
 	}
 
 	private async Task SwitchStatusSaved(JobHeaderData item) {
