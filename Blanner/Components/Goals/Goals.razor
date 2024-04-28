@@ -27,7 +27,7 @@
 
 	<div class="goals-table mt-2">
 		
-		<div class="goals-table-body">
+		<div class="goals-table-body" style="height: @(DataHeight); overflow-y: auto;">
 			@foreach (var group in _goals.GroupBy(x => new Value<Contractor, int>(x.Contractor)).OrderBy(x => x.Key.ToString())) {
 				Contractor? keyValue = group.Key;
 				
@@ -66,6 +66,9 @@
 @code {
 	private string _userId = "";
 	private List<GoalVM> _goals = new();
+
+	[Parameter]
+	public string DataHeight { get; set; } = "auto";
 
 	[SupplyParameterFromForm]
 	private GoalsFilterForm FilterForm { get; set; } = new();
