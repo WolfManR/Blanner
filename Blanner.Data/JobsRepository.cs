@@ -90,11 +90,13 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 			var goalStart = goal.GoalTime.Select(x => x.Start).DefaultIfEmpty().Min();
             DateOnly goalDate = DateOnly.FromDateTime(goalStart.DateTime);
             string goalName = goal.Name.Trim();
+			Contractor? goalContractor = goal.Contractor;
 
             var context = await _dbContext.Jobs
 				.Include(x => x.User)
                 .Where(x => x.User != null && x.User.Id == data.UserId && x.Date == goalDate && x.Name == goalName)
                 .Include(x => x.Contractor)
+				.Where(x => (x.Contractor == null && goalContractor == null) || (x.Contractor != null && goalContractor != null && x.Contractor.Id == goalContractor.Id))
 				.Include(x => x.Time)
 				.AsSplitQuery()
 				.FirstOrDefaultAsync();
@@ -108,11 +110,13 @@ public class JobsRepository(ApplicationDbContext dbContext) {
             if(context is not null) {
                 context.Time.AddRange(goalTime);
 
-                context.Start = context.Time.Select(x => x.Start).DefaultIfEmpty().Max();
+                context.Start = context.Time.Select(x => x.Start).DefaultIfEmpty().Min();
                 context.End = context.Time.Select(x => x.End).DefaultIfEmpty().Max();
                 context.Comment += $"{(context.Comment.Length > 0 ? "\n\n" : "")}{goal.Comment}";
 
                 context.ElapsedTime = context.Time.Aggregate(TimeSpan.Zero, (acc, time) => acc + (time.End - time.Start));
+
+				context.Saved = false;
             }
             else {
 				var goalEnd = goal.GoalTime.Select(x => x.Start).DefaultIfEmpty().Max();
