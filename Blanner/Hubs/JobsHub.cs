@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 namespace Blanner.Hubs;
 public interface IJobsClient {
 	Task JobHeaderEdited(int jobId, string userId, JobEditableHeaderData headerData);
-	Task JobStatusSavedEdited(int jobId, string userId, bool status);
+	Task JobStatusSavedEdited(int jobId, string userId, bool status, int[] updatedChanges);
 	Task JobDeleted(int jobId, string userId);
 
 	//Task TimerEdited(int jobId, int timerId, string userId, TimerEditData data);
@@ -17,7 +17,7 @@ public interface IJobsClient {
 }
 
 public delegate Task JobHeaderEdited(int jobId, string userId, JobEditableHeaderData headerData);
-public delegate Task JobStatusSavedEdited(int jobId, string userId, bool status);
+public delegate Task JobStatusSavedEdited(int jobId, string userId, bool status, int[] updatedChanges);
 public delegate Task JobDeleted(int jobId, string userId);
 
 //public delegate Task TimerEdited(int jobId, int timerId, string userId, TimerEditData data);

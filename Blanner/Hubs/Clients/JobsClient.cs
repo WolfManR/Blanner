@@ -9,7 +9,7 @@ namespace Blanner.Hubs.Clients;
 public class JobsClient : HubClientBase, IJobsClient {
 	public JobsClient(NavigationManager navigationManager) : base(navigationManager.JobsHubUri()) {
 		Hub.On<int, string, JobEditableHeaderData>(nameof(IJobsClient.JobHeaderEdited), JobHeaderEdited);
-		Hub.On<int, string, bool>(nameof(IJobsClient.JobStatusSavedEdited), JobStatusSavedEdited);
+		Hub.On<int, string, bool, int[]>(nameof(IJobsClient.JobStatusSavedEdited), JobStatusSavedEdited);
 		Hub.On<int, string>(nameof(IJobsClient.JobDeleted), JobDeleted);
 
 		Hub.On<string>(nameof(IJobsClient.JobsBuilded), JobsBuilded);
@@ -26,9 +26,9 @@ public class JobsClient : HubClientBase, IJobsClient {
 			await OnJobHeaderEdited.Invoke(jobId, userId, headerData);
 	}
 
-	public async Task JobStatusSavedEdited(int jobId, string userId, bool status) {
+	public async Task JobStatusSavedEdited(int jobId, string userId, bool status, int[] updatedChanges) {
 		if (OnJobStatusSavedEdited is not null)
-			await OnJobStatusSavedEdited.Invoke(jobId, userId, status);
+			await OnJobStatusSavedEdited.Invoke(jobId, userId, status, updatedChanges);
 	}
 
 	public async Task JobDeleted(int jobId, string userId) {

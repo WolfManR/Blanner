@@ -13,6 +13,7 @@ public class JobContext {
     public DateTimeOffset Start { get; set; }
     public DateTimeOffset End { get; set; }
     public List<JobTime> Time { get; set; } = [];
+    public List<JobChanges> Changes { get; set; } = [];
 
     public override string ToString() => Name;
 }

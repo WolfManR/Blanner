@@ -10,4 +10,5 @@ public class JobTime : ITime
 
     public User? User { get; set; }
     public JobContext Context { get; set; } = default!;
+    public JobChanges? JobChange { get; set; }
 }

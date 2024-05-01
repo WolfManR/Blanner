@@ -76,12 +76,55 @@
 
 					<h4>@Selected?.Name</h4>
 
-					@if (Selected?.Comment is { Length: > 0 }) {
-						<div class="mt-2 bg-white p-2" style="height:78dvh;overflow-y:auto;">
-							<p>@((MarkupString) @Selected.Comment.Replace("\n", "<br/>"))</p>
-						</div>
-					}
+					<FluentTabs ActiveTabId="tab-1">
+						<FluentTab Id="tab-1">
+							<Header>
+								Comment
+							</Header>
+							<Content>
+								@if (Selected?.Comment is { Length: > 0 }) {
+									<div class="mt-2 bg-white p-2" style="height:78dvh;overflow-y:auto;">
+										<p>@((MarkupString) @Selected.Comment.Replace("\n", "<br/>"))</p>
+									</div>
+								}
+							</Content>
+						</FluentTab>
 
+						<FluentTab Id="tab-2">
+							<Header>
+								Changes
+							</Header>
+							<Content>
+								<div class="mt-2 bg-white p-2" style="height:78dvh;overflow-y:auto;">
+
+									@if (Selected?.Changes is { Count: > 0 }) {
+										@foreach (var change in Selected.Changes) {
+											<div class="card mb-3">
+												<div class="card-header">
+													<div class="row">
+														<div class="col-auto">
+															<FluentButton IconStart="@(change.Saved ? new Icons.Filled.Size24.Database() : new Icons.Regular.Size24.Database())" />
+														</div>
+														<span class="col-1">@change.ElapsedTime.ToString(UserSettings.TimeFormatterValue())</span>
+														<span class="col-md-auto"><span>@change.Start.ToString(UserSettings.DateTimeFormatterValue())</span> - <span>@change.End.ToString(UserSettings.DateTimeFormatterValue())</span></span>
+													</div>
+												</div>
+												<div class="card-body">
+													<div>
+														@if (change.Comment is { Length: > 0 }) {
+															<div class="mt-2 bg-white p-2">
+																<p>@((MarkupString) @change.Comment.Replace("\n", "<br/>"))</p>
+															</div>
+														}
+													</div>
+												</div>
+											</div>
+										}
+									}
+								</div>
+							</Content>
+						</FluentTab>
+					</FluentTabs>
 				</FluentCard>
 			</div>
 		</Panel2>
@@ -160,10 +203,11 @@
 		await InvokeAsync(StateHasChanged);
 	}
 
-	private async Task OnJobStatusSavedEdited(int jobId, string userId, bool status) {
+	private async Task OnJobStatusSavedEdited(int jobId, string userId, bool status, int[] updatedChanges) {
 		if (JobHeaders.Find(x => x.Id == jobId) is not { } job) return;
 
 		job.Saved = status;
+		job.Changes.Where(x => updatedChanges.Contains(x.Id)).Change(x => x.Saved = status);
 
 		await InvokeAsync(StateHasChanged);
 	}

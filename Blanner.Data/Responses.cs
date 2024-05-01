@@ -139,6 +139,20 @@ public class JobHeaderData {
 	public TimeSpan ElapsedTime { get; set; }
 	public DateTimeOffset Start { get; set; }
 	public DateTimeOffset End { get; set; }
+
+	public List<JobChangesData> Changes { get; set; } = [];
+}
+
+public class JobChangesData {
+	public int Id { get; set; }
+
+	public string Comment { get; set; } = string.Empty;
+
+	public bool Saved { get; set; }
+
+	public TimeSpan ElapsedTime { get; set; }
+	public DateTimeOffset Start { get; set; }
+	public DateTimeOffset End { get; set; }
 }
 
 public class JobEditableHeaderData {

@@ -11,9 +11,8 @@ public class JobsRepository(ApplicationDbContext dbContext) {
         var data = await _dbContext.Jobs.AsNoTracking()
                  .Include(x => x.User)
                  .Where(x => x.User != null && x.User.Id == userId)
-                 .Include(x => x.Time)
-                 .Include(x => x.Contractor)
                  .Where(x => x.Date > start && x.Date < end)
+				 .Include(x => x.Changes)
                  .Select(x => new JobHeaderData {
 					 Id = x.Id,
 					 User = x.User,
@@ -25,7 +24,19 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 					 ElapsedTime = x.ElapsedTime,
 					 Start = x.Start,
 					 End = x.End,
-				 }).ToListAsync();
+					 Changes = x.Changes
+						.Select(ch => new JobChangesData() {
+							Id = ch.Id,
+							Comment = ch.Comment,
+							Saved = ch.Saved,
+							Start = ch.Start,
+							End = ch.End,
+							ElapsedTime = ch.ElapsedTime
+						})
+						.ToList()
+				 })
+				 .AsSplitQuery()
+				 .ToListAsync();
 
         return data;
     }
@@ -87,12 +98,21 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 
 		foreach (var goal in goals) {
             if (goal.GoalTime.Count <= 0) continue;
-			var goalStart = goal.GoalTime.Select(x => x.Start).DefaultIfEmpty().Min();
-            DateOnly goalDate = DateOnly.FromDateTime(goalStart.DateTime);
+
+			var goalTime = goal.GoalTime.Select(x => new JobTime() {
+				User = user,
+				Start = x.Start,
+				End = x.End
+			}).ToList();
+
+			var goalStart = goalTime.Select(x => x.Start).DefaultIfEmpty().Min();
+			var goalEnd = goalTime.Select(x => x.Start).DefaultIfEmpty().Max();
+			var goalElapsedTime = goal.TotalTime();
+			DateOnly goalDate = DateOnly.FromDateTime(goalStart.DateTime);
             string goalName = goal.Name.Trim();
 			Contractor? goalContractor = goal.Contractor;
-
-            var context = await _dbContext.Jobs
+			
+			var context = await _dbContext.Jobs
 				.Include(x => x.User)
                 .Where(x => x.User != null && x.User.Id == data.UserId && x.Date == goalDate && x.Name == goalName)
                 .Include(x => x.Contractor)
@@ -100,12 +120,6 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 				.Include(x => x.Time)
 				.AsSplitQuery()
 				.FirstOrDefaultAsync();
-
-            var goalTime = goal.GoalTime.Select(x => new JobTime() {
-				User = user,
-				Start = x.Start,
-				End = x.End
-			}).ToList();
 
             if(context is not null) {
                 context.Time.AddRange(goalTime);
@@ -117,11 +131,16 @@ public class JobsRepository(ApplicationDbContext dbContext) {
                 context.ElapsedTime = context.Time.Aggregate(TimeSpan.Zero, (acc, time) => acc + (time.End - time.Start));
 
 				context.Saved = false;
+
+				context.Changes.Add(new() {
+					Comment = goal.Comment,
+					Start = goalStart,
+					End = goalEnd,
+					ElapsedTime = goalElapsedTime,
+					Time = goalTime
+				});
             }
             else {
-				var goalEnd = goal.GoalTime.Select(x => x.Start).DefaultIfEmpty().Max();
-				var goalElapsedTime = goal.TotalTime();
-
 				context ??= new() {
 					User = user,
 					Contractor = goal.Contractor,
@@ -193,11 +212,16 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 	public async Task<JobContext> Update(JobSavedChangedData data) {
 		JobContext context = await _dbContext.Jobs
 			   .Where(x => x.Id == data.JobId)
+			   .Include(x => x.Changes.Where(ch => !ch.Saved))
 			   .FirstAsync();
 
 		context.Saved = data.Saved;
+        foreach (var change in context.Changes)
+        {
+			change.Saved = true;
+        }
 
-		await _dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync();
 
 		return context;
 	}

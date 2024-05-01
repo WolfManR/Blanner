@@ -59,7 +59,7 @@ public static class JobsEndpointsBehaviors {
 		var context = await repository.Update(request);
 		if (context is null) return TypedResults.BadRequest();
 
-		await hubContext.Clients.All.JobStatusSavedEdited(context.Id, request.UserId, context.Saved);
+		await hubContext.Clients.All.JobStatusSavedEdited(context.Id, request.UserId, context.Saved, context.Changes.Select(x => x.Id).ToArray());
 		return TypedResults.Ok();
 	}
 }
