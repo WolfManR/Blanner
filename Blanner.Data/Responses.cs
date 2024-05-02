@@ -219,3 +219,13 @@ public class UserInfoData {
 	public string Id { get; set; } = default!;
 	public string? Name { get; set; }
 }
+
+public class ActiveUserWorkData {
+	public UserInfoData User { get; set; } = default!;
+	public List<WorkData> WorkData { get; set; } = [];
+}
+
+public class WorkData {
+	public int Id { get; set; }
+	public string Name { get; set; } = string.Empty;
+}

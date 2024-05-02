@@ -1,13 +1,54 @@
 ﻿@page "/"
+
 @inject ILocalization Loc
+@inject HttpClient Http
+@inject NavigationManager NavManager
 
 <PageTitle>@Loc.HomePageTitle</PageTitle>
 
 <AuthorizeView>
     <Authorized>
-        <GoalsDashboard/>
+		<div style="max-height: min(96dvh, 100% - 6rem); overflow-y:auto;">
+
+			<div class="d-flex flex-column">
+				<h4>Still working</h4>
+				@foreach (var data in WorkingUsers) {
+					<div class="d-flex flex-row">
+						<h6 class="flex-grow-1">@data.User.Name</h6>
+
+						<div class="flex-grow-1 d-flex flex-column">
+							@foreach (var work in data.WorkData) {
+								<p>@work.Name</p>
+							}
+						</div>
+					</div>
+				}
+			</div>
+        <hr />
+        <ActiveGoals/>
+        </div>
     </Authorized>
     <NotAuthorized>
         @Loc.HomePageWelcome
     </NotAuthorized>
 </AuthorizeView>
+
+@code{
+    private List<ActiveUserWorkData> WorkingUsers { get; set; } = []; 
+
+    protected override async Task OnInitializedAsync() {
+        await LoadData();
+    }
+
+    private async Task LoadData() {
+        var url = NavManager.ToAbsoluteUri("api/users/working").AbsoluteUri;
+
+		var response = await Http.GetFromJsonAsync<List<ActiveUserWorkData>>(url);
+		if (response is null) {
+            WorkingUsers.Clear();
+			return;
+		}
+        WorkingUsers = response.ToList();
+	}
+
+}

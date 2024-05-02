@@ -12,22 +12,30 @@ public static class UsersEndpoints {
 
 		goalsGroup.MapGet("/", UsersEndpointsBehaviors.Users);
 		goalsGroup.MapGet("/{userId}", UsersEndpointsBehaviors.User);
+		goalsGroup.MapGet("/working", UsersEndpointsBehaviors.WorkingUsers);
 	} 
 }
 public static class UsersEndpointsBehaviors {
 	public static async Task<IResult> Users(
 		[FromServices] UsersRepository usersRepository) {
-		var goals = (await usersRepository.Users().ToListAsync()).Select(x => new UserSelectListData(x)).ToList();
+		var users = (await usersRepository.Users().ToListAsync()).Select(x => new UserSelectListData(x)).ToList();
 
-		return TypedResults.Json(goals);
+		return TypedResults.Json(users);
 	}
 
 	public static async Task<IResult> User(
 		[FromRoute] string userId,
 		[FromServices] UsersRepository usersRepository) {
-		var goal = await usersRepository.User(userId);
+		var user = await usersRepository.User(userId);
 
-		return goal is null ? TypedResults.NotFound() : TypedResults.Json(new UserInfoData(goal));
+		return user is null ? TypedResults.NotFound() : TypedResults.Json(new UserInfoData(user));
+	}
+
+	public static async Task<IResult> WorkingUsers(
+		[FromServices] UsersRepository usersRepository) {
+		var users = (await usersRepository.WorkingUsers());
+
+		return TypedResults.Json(users);
 	}
 }
 
