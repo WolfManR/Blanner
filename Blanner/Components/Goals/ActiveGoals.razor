@@ -88,21 +88,21 @@
 		GoalsClient.OnActiveGoalCreated += OnActiveGoalCreated;
 		GoalsClient.OnActiveGoalHeaderEdited += OnActiveGoalHeaderEdited;
 		GoalsClient.OnActiveGoalDeleted += OnActiveGoalDeleted;
-		
+
 		GoalsClient.OnTimerEdited += OnTimerEdited;
 		GoalsClient.OnTimerStopped += OnTimerStopped;
-		
+
 		GoalsClient.OnActiveGoalTimerCreated += OnActiveGoalTimerCreated;
 		GoalsClient.OnActiveGoalTimerEdited += OnActiveGoalTimerEdited;
 		GoalsClient.OnActiveGoalTimerDeleted += OnActiveGoalTimerDeleted;
-		
+
 		GoalsClient.OnJobsBuilded += OnJobsBuilded;
 
 		await GoalsClient.Start();
 	}
 
 	#region UI Handlers
-	
+
 	private void ItemOnAppearingHandler(ItemAppearingEventArgs e) {
 		if (e.Data is not ActiveGoalVM item) return;
 		switch (e.MenuItem.Id) {
@@ -177,7 +177,7 @@
 	}
 
 	#endregion
-	
+
 	#region Subscriptions
 
 	private async Task OnGoalCreated(int goalId, string userId, GoalData data) {
@@ -212,6 +212,8 @@
 
 
 	private async Task OnGoalActivated(int goalId, int activeGoalId, string userId, ActiveGoalData data) {
+		if (data.User?.Id != userId) return;
+
 		ActiveGoalVM? goal = _goals.Find(x => x.Id == activeGoalId);
 		if (goal is null) {
 			goal = new(data);
@@ -225,6 +227,8 @@
 	}
 
 	private async Task OnActiveGoalCreated(int activeGoalId, string userId, ActiveGoalData data) {
+		if (data.User?.Id != userId) return;
+
 		ActiveGoalVM? goal = _goals.Find(x => x.Id == activeGoalId);
 		if (goal is null) {
 			goal = new(data);

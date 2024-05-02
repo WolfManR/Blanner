@@ -85,11 +85,11 @@
 		GoalsClient.OnGoalCreated += OnGoalCreated;
 		GoalsClient.OnGoalHeaderEdited += OnGoalHeaderEdited;
 		GoalsClient.OnGoalDeleted += OnGoalDeleted;
-		
+
 		GoalsClient.OnGoalActivated += OnGoalActivated;
 		GoalsClient.OnActiveGoalHeaderEdited += OnActiveGoalHeaderEdited;
 		GoalsClient.OnActiveGoalDeleted += OnActiveGoalDeleted;
-		
+
 		GoalsClient.OnJobsBuilded += OnJobsBuilded;
 
 		await GoalsClient.Start();
@@ -148,6 +148,8 @@
 	#region Subscriptions
 
 	private async Task OnGoalCreated(int goalId, string userId, GoalData data) {
+		if (data.User?.Id != userId) return;
+
 		GoalVM? goal = _goals.Find(x => x.Id == goalId);
 		if (goal is not null) return;
 		goal = new(data);
