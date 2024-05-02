@@ -97,7 +97,7 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 			.ToListAsync();
 
 		foreach (var goal in goals) {
-            if (goal.GoalTime.Count <= 0) continue;
+            if (goal.GoalTime.Count <= 0 && string.IsNullOrWhiteSpace(goal.Comment)) continue;
 
 			var goalTime = goal.GoalTime.Select(x => new JobTime() {
 				User = user,
