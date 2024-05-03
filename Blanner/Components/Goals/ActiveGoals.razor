@@ -212,7 +212,7 @@
 
 
 	private async Task OnGoalActivated(int goalId, int activeGoalId, string userId, ActiveGoalData data) {
-		if (data.User?.Id != userId) return;
+		if (data.User?.Id != _userId) return;
 
 		ActiveGoalVM? goal = _goals.Find(x => x.Id == activeGoalId);
 		if (goal is null) {
@@ -227,7 +227,7 @@
 	}
 
 	private async Task OnActiveGoalCreated(int activeGoalId, string userId, ActiveGoalData data) {
-		if (data.User?.Id != userId) return;
+		if (data.User?.Id != _userId) return;
 
 		ActiveGoalVM? goal = _goals.Find(x => x.Id == activeGoalId);
 		if (goal is null) {

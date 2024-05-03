@@ -148,7 +148,7 @@
 	#region Subscriptions
 
 	private async Task OnGoalCreated(int goalId, string userId, GoalData data) {
-		if (data.User?.Id != userId) return;
+		if (data.User?.Id != _userId) return;
 
 		GoalVM? goal = _goals.Find(x => x.Id == goalId);
 		if (goal is not null) return;
