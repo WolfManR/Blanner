@@ -79,13 +79,7 @@
 	</div>
 }
 
-<TimeRangeEditDialog @ref="_dialogRef" DialogCompletion="DialogClosed" />
-
 @code {
-
-    private TimeRangeEditDialog? _dialogRef;
-    private Func<TimeRange?, ValueTask>? _dialogCompletion;
-
     private string _userId = "";
     private bool _showTimes;
 
@@ -132,18 +126,26 @@
     }
 
     private async ValueTask OpenDialog(Func<TimeRange?, ValueTask> dialogCompletion) {
-        if (_dialogRef is null) return;
+        TimeRangeDialogParameters parameters = new()
+        {
+                TimeRange = new (){
+                            Start = TimerEditForm.Start,
+                            End = TimerEditForm.End
+            }
+        };
 
-        _dialogCompletion = dialogCompletion;
-        await _dialogRef.OpenDialog(new() {
-                Start = TimerEditForm.Start,
-                End = TimerEditForm.End
-            });
-    }
+        DialogParameters dialogParameters = new() {
+                Modal = true,
+                PreventScroll = true,
+                ShowDismiss = true
+            };
 
-    private async Task DialogClosed(TimeRange? range) {
-        if (_dialogCompletion is not null) await _dialogCompletion.Invoke(range);
-        _dialogCompletion = null;
+        IDialogReference dialog = await DialogService.ShowDialogAsync<TimeRangeEditDialog>(parameters, dialogParameters);
+        var result = await dialog.Result;
+        if (!result.Cancelled && result.Data != null) {
+            var timeRange = (TimeRange?)result.Data;
+            await dialogCompletion.Invoke(timeRange);
+        }
     }
 
     private async ValueTask AddTimeActiveGoalCompletion(TimeRange? timeRange) {

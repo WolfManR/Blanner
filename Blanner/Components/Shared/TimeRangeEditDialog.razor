@@ -1,161 +1,102 @@
 ﻿@inject IJSRuntime JS
 @inject ILocalization Loc
 
+@implements IDialogContentComponent<TimeRangeDialogParameters>
 
-<dialog @ref="_dialogRef" class="time-dialog w-25" id="GoalEditorDialog" @onclose="CloseDialog" @oncancel="CloseDialog">
-	<EditForm Model="this">
+<FluentDialogHeader>
+	<div class="d-flex">
+		<h3>Set time range</h3>
+		<FluentSpacer />
+		<h3>@Time</h3>
+	</div>
+</FluentDialogHeader>
+
+<FluentDialogBody>
+	<EditForm Model="this" FormName="TimeRangePicker">
 		<div class="d-flex justify-content-between mb-2">
-			<InputDate @bind-Value="StartDate" DisplayName="Start" />
-			<span class="ml-4 mr-4">-</span>
-			<InputDate @bind-Value="EndDate" DisplayName="End" />
+			<FluentDatePicker @bind-Value="@Start" Immediate/>
+			<span class="ml-4 mr-4 fs-3 lh-2">-</span>
+			<FluentDatePicker @bind-Value="@End" Immediate/>
 		</div>
-		<div class="d-flex">
-			<div class="d-flex flex-row justify-content-start">
-				<InputNumber class="w-50" @bind-Value="StartHours" DisplayName="Hours" />
-				<InputNumber class="w-50" @bind-Value="StartMinutes" DisplayName="Minutes" />
-			</div>
-			<div class="w-25"></div>
-			<div class="d-flex flex-row justify-content-end">
-				<InputNumber class="w-50" @bind-Value="EndHours" DisplayName="Hours" />
-				<InputNumber class="w-50" @bind-Value="EndMinutes" DisplayName="Minutes" />
-			</div>
-		</div>
-		<div class="d-flex mt-4">
 
-			<form method="dialog">
-				<button class="btn btn-primary" @onclick="SubmitResult">@Loc.BtnOk</button>
-				<button class="btn btn-close"></button>
-			</form>
-
-			<div class="me-4">@CurrentTimeRange.ToString()</div>
+		<div class="d-flex justify-content-between w-100">
+			<FluentTimePicker @bind-Value="@Start" Immediate DisplayName="StartTime"/>
+			<div>
+				<FluentTimePicker Value="@(new DateTime(Time.Ticks))" ValueChanged="@((DateTime? v) => Time = v!.Value.TimeOfDay)" Immediate DisplayName="Time" />
+			</div>
+			<FluentTimePicker @bind-Value="@End" Immediate DisplayName="EndTime" />
 		</div>
 	</EditForm>
-</dialog>
+</FluentDialogBody>
+
+<FluentDialogFooter>
+	<FluentButton Appearance="Appearance.Accent" OnClick="SubmitResult">@Loc.BtnOk</FluentButton>
+	<FluentSpacer/>
+</FluentDialogFooter>
 
 @code {
-	private DateTime _startDate;
-	private int _startHours;
-	private int _startMinutes;
-	private DateTime _endDate;
-	private int _endHours;
-	private int _endMinutes;
+	private DateTime? _start;
+	private DateTime? _end;
+	private DateTime? _time;
+	private TimeSpan _currentTimeRange;
 
+	private DateTime? Start { 
+		get => _start;
+		set {
+			_start = value;
+			if (_start.HasValue) _start = _start.Value.Normalize();
+			if (_start > _end) _end = _start;
+			UpdateTimeRange();
+		}}
+	private DateTime? End {
+		get => _end;
+		set {
+			_end = value;
+			if (_end.HasValue) _end = _end.Value.Normalize();
+			if (_end < _start) _start = _end;
+			UpdateTimeRange();
+		}}
+	private TimeSpan Time { get => _currentTimeRange; set => _end = Start!.Value + value; }
 
-	private ElementReference? _dialogRef;
+	[CascadingParameter]
+	public FluentDialog? Dialog { get; set; }
+
 	[Parameter]
-	public EventCallback<TimeRange?> DialogCompletion { get; set; }
+	public TimeRangeDialogParameters Content { get; set; } = default!;
 
-	private DateTime StartDate {
-		get => _startDate; set {
-			_startDate = value;
-			UpdateTimeRange();
-		}
-	}
-	private int StartHours {
-		get => _startHours; set {
-			SetNewValue(value, 0, 23, ref _startHours, () => StartDate, (v) => StartDate = v);
-			UpdateTimeRange();
-		}
-	}
-	private int StartMinutes {
-		get => _startMinutes; set {
-			SetNewValue(value, 0, 59, ref _startMinutes, (v) => StartHours += v);
-			UpdateTimeRange();
-		}
-	}
-	private DateTime EndDate {
-		get => _endDate; set {
-			_endDate = value;
-			UpdateTimeRange();
-		}
-	}
-	private int EndHours {
-		get => _endHours; set {
-			SetNewValue(value, 0, 23, ref _endHours, () => EndDate, (v) => EndDate = v);
-			UpdateTimeRange();
-		}
-	}
-	private int EndMinutes {
-		get => _endMinutes; set {
-			SetNewValue(value, 0, 59, ref _endMinutes, (v) => EndHours += v);
-			UpdateTimeRange();
-		}
-	}
+	protected override void OnParametersSet() {
+		var range = Content.TimeRange;
 
-	private TimeSpan CurrentTimeRange;
-	private bool _valueSubmited;
-
-
-	public async ValueTask OpenDialog(TimeRange? range = default) {
-		if (!_dialogRef.HasValue) return;
-
-		if (range is not null) {
-			StartDate = range.Start.Date;
-			StartHours = range.Start.Hour;
-			StartMinutes = range.Start.Minute;
-			EndDate = range.End.Date;
-			EndHours = range.End.Hour;
-			EndMinutes = range.End.Minute;
+		if(range is not null) {
+			Start = range.Start.DateTime;
+			End = range.End.DateTime;
 		}
 		UpdateTimeRange();
-		await JS.InvokeVoidAsync("ShowDialog", _dialogRef.Value);
+
+		base.OnParametersSet();
 	}
 
-
 	private async Task SubmitResult(MouseEventArgs e) {
-		_valueSubmited = true;
-		if (!_dialogRef.HasValue) return;
-		if (!DialogCompletion.HasDelegate) return;
+		if (!Start.HasValue || !End.HasValue) return;
 
-		var startDate = DateTime.SpecifyKind(StartDate.AddHours(StartHours).AddMinutes(StartMinutes), DateTimeKind.Local);
-		var endDate = DateTime.SpecifyKind(EndDate.AddHours(EndHours).AddMinutes(EndMinutes), DateTimeKind.Local);
+		var startDate = DateTime.SpecifyKind(Start.Value, DateTimeKind.Local);
+		var endDate = DateTime.SpecifyKind(End.Value, DateTimeKind.Local);
 
 		if (startDate > endDate) return;
 
-		await DialogCompletion.InvokeAsync(new() { Start = startDate, End = endDate });
-	}
-
-	private async Task CloseDialog(EventArgs e) {
-		if (_valueSubmited) return;
-		_valueSubmited = false;
-		if (!_dialogRef.HasValue) return;
-		if (DialogCompletion.HasDelegate)
-			await DialogCompletion.InvokeAsync();
-	}
-
-	private void SetNewValue(int value, int min, int max, ref int field, Action<int> greaterFieldSet) {
-		if (value >= max) {
-			greaterFieldSet.Invoke(1);
-			field = min;
-			return;
-		}
-		if (value <= min) {
-			greaterFieldSet.Invoke(-1);
-			field = max;
-			return;
-		}
-		field = value;
-	}
-	private void SetNewValue(int value, int min, int max, ref int field, Func<DateTime> greaterFieldGet, Action<DateTime> greaterFieldSet) {
-		if (value >= max) {
-			greaterFieldSet.Invoke(greaterFieldGet.Invoke().AddDays(1));
-			field = min;
-			return;
-		}
-		if (value <= min) {
-			greaterFieldSet.Invoke(greaterFieldGet.Invoke().AddDays(-1));
-			field = max;
-			return;
-		}
-		field = value;
+		await Dialog!.CloseAsync(new TimeRange() { Start = startDate, End = endDate });
 	}
 
 	private void UpdateTimeRange() {
+		if (!Start.HasValue || !End.HasValue) return;
+
 		try {
-			var startDate = DateTime.SpecifyKind(StartDate.AddHours(StartHours).AddMinutes(StartMinutes), DateTimeKind.Local);
-			var endDate = DateTime.SpecifyKind(EndDate.AddHours(EndHours).AddMinutes(EndMinutes), DateTimeKind.Local);
-			CurrentTimeRange = endDate - startDate;
+			var startDate = DateTime.SpecifyKind(Start.Value, DateTimeKind.Local);
+			var endDate = DateTime.SpecifyKind(End.Value, DateTimeKind.Local);
+			_currentTimeRange = endDate - startDate;
 		}
-		catch { }
+		catch {
+			// ignore
+		}
 	}
 }

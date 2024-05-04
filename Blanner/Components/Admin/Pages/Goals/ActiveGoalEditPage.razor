@@ -4,6 +4,7 @@
 @inject HttpClient Http
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IDialogService DialogService
 
 <EditForm FormName="AdminActiveGoalEditForm" Model="this">
 	<DataAnnotationsValidator />
@@ -80,8 +81,6 @@
 	</table>
 </div>
 
-<TimeRangeEditDialog @ref="_dialogRef" DialogCompletion="DialogClosed" />
-
 <FluentStack>
 	<FluentButton OnClick="Save">Save</FluentButton>
 	@if (GoalId is not null) {
@@ -95,8 +94,6 @@
 	private List<UserSelectListData> _users = [];
 	private string _userId = "";
 
-	private TimeRangeEditDialog? _dialogRef;
-	private Func<TimeRange?, ValueTask>? _dialogCompletion;
 	private UserSettings? UserSettings { get; set; }
 	private ActiveGoalTimeEditForm ActiveGoalTimeEditFormModel { get; set; } = ActiveGoalTimeEditForm.Create();
 
@@ -176,18 +173,26 @@
 	}
 
 	private async ValueTask OpenDialog(Func<TimeRange?, ValueTask> dialogCompletion) {
-		if (_dialogRef is null) return;
+		TimeRangeDialogParameters parameters = new() {
+				TimeRange = new() {
+					Start = ActiveGoalTimeEditFormModel.Start,
+					End = ActiveGoalTimeEditFormModel.End
+				}
 
-		_dialogCompletion = dialogCompletion;
-		await _dialogRef.OpenDialog(new() {
-				Start = ActiveGoalTimeEditFormModel.Start,
-				End = ActiveGoalTimeEditFormModel.End
-			});
-	}
+			};
 
-	private async Task DialogClosed(TimeRange? range) {
-		if (_dialogCompletion is not null) await _dialogCompletion.Invoke(range);
-		_dialogCompletion = null;
+		DialogParameters dialogParameters = new() {
+				Modal = true,
+				PreventScroll = true,
+				ShowDismiss = true
+			};
+
+		IDialogReference dialog = await DialogService.ShowDialogAsync<TimeRangeEditDialog>(parameters, dialogParameters);
+		var result = await dialog.Result;
+		if (!result.Cancelled && result.Data != null) {
+			var timeRange = (TimeRange?) result.Data;
+			await dialogCompletion.Invoke(timeRange);
+		}
 	}
 
 	private async ValueTask AddTimeActiveGoalCompletion(TimeRange? timeRange) {
