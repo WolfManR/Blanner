@@ -79,6 +79,7 @@ try {
 
 	app.MapHub<GoalsHub>("/hubs/goals");
 	app.MapHub<JobsHub>("/hubs/jobs");
+	app.MapHub<ContractorsHub>("/hubs/contractors");
 	app.MapHub<StickyHub>("/hubs/sticky");
 
 	app.Services.SetupCoravel();
@@ -140,6 +141,7 @@ internal static class HostExtensions {
 		//services
 		//	.AddScoped<StickyNoteClient>()
 		//	.AddScoped<JobsClient>()
+		//	.AddScoped<ContractorsClient>()
 		//	.AddScoped<GoalsClient>();
 
 		services.AddSignalR();

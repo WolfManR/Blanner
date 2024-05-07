@@ -4,6 +4,8 @@
 @inject NavigationManager NavManager
 @inject ILocalization Loc
 
+@implements IAsyncDisposable
+
 <PageTitle>@Loc.ContractorsPageTitle</PageTitle>
 
 <h3>@Loc.ContractorsPageTitle</h3>
@@ -42,61 +44,91 @@
 </div>
 
 @code {
+	private ContractorsClient? ContractorsClient { get; set; }
 	private List<ContractorVM> _contractors = new();
 	private NameFormModel ContractorCreateModel { get; set; } = new();
 
 	protected override async Task OnInitializedAsync() {
 		var uri = NavManager.ToAbsoluteUri("api/contractors").AbsoluteUri;
 		var response = await Http.GetFromJsonAsync<List<Contractor>>(uri);
-		_contractors = (response ?? new()).Select(x=>new ContractorVM().Set(x)).ToList();
+		_contractors = (response ?? new()).Select(x => new ContractorVM(x)).ToList();
+
+		ContractorsClient = new(NavManager);
+
+		ContractorsClient.OnContractorCreated += OnContractorCreated;
+		ContractorsClient.OnContractorEdited += OnContractorEdited;
+		ContractorsClient.OnContractorDeleted += OnContractorDeleted;
+
+		await ContractorsClient.Start();
 	}
+
+	#region UI Handlers
 
 	private async Task CreateContractor() {
 		var uri = NavManager.ToAbsoluteUri("api/contractors").AbsoluteUri;
 		var response = await Http.PostAsJsonAsync(uri, new ContractorCreateRequest(ContractorCreateModel.Name, DateTimeOffset.Now));
-		response.EnsureSuccessStatusCode();
-		var data = await response.Content.ReadFromJsonAsync<Contractor>();
-		if (data is null) return;
-
-		_contractors.Insert(0, new ContractorVM().Set(data));
 	}
 
 	private async Task Save(ContractorVM contractor) {
 		var uri = NavManager.ToAbsoluteUri("api/contractors").AbsoluteUri;
 		var response = await Http.PutAsJsonAsync(uri, new ContractorEditRequest(contractor.Id, contractor.Name, DateTimeOffset.Now));
-		response.EnsureSuccessStatusCode();
+		if(!response.IsSuccessStatusCode) return;
 		var data = await response.Content.ReadFromJsonAsync<Contractor>();
 		if (data is null) return;
 
-		contractor.Set(data);
+		contractor.Name = data.Name;
 		contractor.IsOnEdit = false;
 	}
 
 	private async Task Delete(ContractorVM contractor) {
 		var uri = NavManager.ToAbsoluteUri($"api/contractors/{contractor.Id}").AbsoluteUri;
 		var response = await Http.DeleteAsync(uri);
-		response.EnsureSuccessStatusCode();
-		var data = await response.Content.ReadFromJsonAsync<Contractor>();
-		if (data is null) return;
-		_contractors.Remove(contractor);
-		StateHasChanged();
 	}
 
-	class ContractorVM {
-		public int Id { get; private set; }
+	#endregion
+
+	#region Subscriptions
+
+	private async Task OnContractorCreated(int id, string name) {
+		if(_contractors.Find(x => x.Id == id) is not null) return;
+		_contractors.Add(new()
+			{
+				Id = id,
+				Name = name
+			});
+		await InvokeAsync(StateHasChanged);
+	}
+
+	private async Task OnContractorEdited(int id, string name) {
+		if (_contractors.Find(x => x.Id == id) is not { IsOnEdit: false } contractor) return;
+
+		contractor.Name = name;
+
+		await InvokeAsync(StateHasChanged);
+	}
+
+	private async Task OnContractorDeleted(int id) {
+		if (_contractors.Find(x => x.Id == id) is not { } contractor) return;
+
+		_contractors.Remove(contractor);
+
+		await InvokeAsync(StateHasChanged);
+	}
+
+	#endregion
+
+	public async ValueTask DisposeAsync() {
+		if (ContractorsClient is not null) await ContractorsClient.DisposeAsync();
+	}
+
+	class ContractorVM() {
+		public int Id { get; set; }
 		public string Name { get; set; } = string.Empty;
 		public bool IsOnEdit { get; set; }
 
-		public ContractorVM Set(Contractor data) {
+		public ContractorVM(Contractor data) : this() {
 			Id = data.Id;
 			Name = data.Name;
-
-			return this;
-		}
-
-		public void Clear() {
-			Id = 0;
-			Name = string.Empty;
 		}
 	}
 }
