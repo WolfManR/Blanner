@@ -2,11 +2,12 @@
 @inject NavigationManager NavManager
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject GoalsClient GoalsClient
 @inject IDialogService DialogService
 @inject ILocalization Loc
 
 @attribute [Authorize]
+
+@implements IAsyncDisposable
 
 <div>
 	<div class="goals-table mt-2">
@@ -63,6 +64,7 @@
 </div>
 
 @code {
+	private GoalsClient? GoalsClient { get; set; }
 	private string _userId = "";
 	private List<ActiveGoalVM> _goals = new();
 
@@ -79,6 +81,8 @@
 		_userId = UserManager.GetUserId(state.User) ?? "";
 
 		await LoadGoals();
+
+		GoalsClient = new(NavManager);
 
 		GoalsClient.OnGoalCreated += OnGoalCreated;
 		GoalsClient.OnGoalHeaderEdited += OnGoalHeaderEdited;
@@ -321,4 +325,8 @@
 	}
 
 	#endregion
+
+	public async ValueTask DisposeAsync() {
+		if (GoalsClient is not null) await GoalsClient.DisposeAsync();
+	}
 }

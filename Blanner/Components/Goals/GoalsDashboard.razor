@@ -5,9 +5,10 @@
 @inject NavigationManager NavManager
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject GoalsClient GoalsClient
 @inject IDialogService DialogService
 @inject ILocalization Loc
+
+@implements IAsyncDisposable
 
 <PageTitle>@Loc.GoalsPageTitle</PageTitle>
 <CascadingValue Value="UserSettings">
@@ -59,6 +60,7 @@
 <GoalsContextMenu OnEdit="OpenGoal" />
 
 @code {
+    private GoalsClient? GoalsClient { get; set; }
     private string _userId = "";
 
     private SidePanelMode _sidePanelMode = SidePanelMode.GoalsList;
@@ -68,6 +70,8 @@
     protected override async Task OnInitializedAsync() {
         var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         _userId = UserManager.GetUserId(state.User) ?? "";
+
+        GoalsClient = new(NavManager);
 
         GoalsClient.OnGoalHeaderEdited += OnGoalHeaderEdited;
         GoalsClient.OnGoalDeleted += OnGoalDeleted;
@@ -252,6 +256,10 @@
     }
 
     #endregion
+
+    public async ValueTask DisposeAsync() {
+        if(GoalsClient is not null) await GoalsClient.DisposeAsync();
+    }
 
     enum SidePanelMode {
         None,

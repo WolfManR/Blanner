@@ -3,11 +3,12 @@
 @inject NavigationManager NavManager
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject GoalsClient GoalsClient
 @inject IDialogService DialogService
 @inject ILocalization Loc
 
 @attribute [Authorize]
+
+@implements IAsyncDisposable
 
 <div>
 	<EditForm FormName="GoalCreation" Model="NewGoal" OnValidSubmit="CreateGoal">
@@ -64,6 +65,7 @@
 
 
 @code {
+	private GoalsClient? GoalsClient { get; set; }
 	private string _userId = "";
 	private List<GoalVM> _goals = new();
 
@@ -81,6 +83,8 @@
 		_userId = UserManager.GetUserId(state.User) ?? "";
 
 		await LoadGoals();
+
+		GoalsClient = new(NavManager);
 
 		GoalsClient.OnGoalCreated += OnGoalCreated;
 		GoalsClient.OnGoalHeaderEdited += OnGoalHeaderEdited;
@@ -221,6 +225,10 @@
 	}
 
 	#endregion
+
+	public async ValueTask DisposeAsync() {
+		if (GoalsClient is not null) await GoalsClient.DisposeAsync();
+	}
 
 	class GoalsFilterForm {
 		public bool IncludeActive { get; set; }

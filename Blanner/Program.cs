@@ -137,10 +137,10 @@ internal static class HostExtensions {
 		services
 			.AddBlazorContextMenu();
 
-		services
-			.AddScoped<StickyNoteClient>()
-			.AddScoped<JobsClient>()
-			.AddScoped<GoalsClient>();
+		//services
+		//	.AddScoped<StickyNoteClient>()
+		//	.AddScoped<JobsClient>()
+		//	.AddScoped<GoalsClient>();
 
 		services.AddSignalR();
 		services.AddHttpClient();

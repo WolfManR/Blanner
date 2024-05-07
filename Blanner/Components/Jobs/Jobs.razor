@@ -5,9 +5,10 @@
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ILocalization Loc
-@inject JobsClient JobsClient
 
 @attribute [Authorize]
+
+@implements IAsyncDisposable
 
 <PageTitle>@Loc.JobsPageTitle</PageTitle>
 
@@ -138,6 +139,7 @@
 </div>
 
 @code {
+	private JobsClient? JobsClient { get; set; }
 	private string _userId = "";
 	private List<JobHeaderData> JobHeaders { get; set; } = [];
 	private JobHeaderData? Selected { get; set; }
@@ -154,6 +156,8 @@
 		_userId = UserManager.GetUserId(state.User) ?? "";
 
 		await LoadJobs();
+
+		JobsClient = new(NavManager);
 
 		JobsClient.OnJobsBuilded += OnJobsBuilded;
 		JobsClient.OnJobStatusSavedEdited += OnJobStatusSavedEdited;
@@ -218,6 +222,10 @@
 		job.Changes.Where(x => updatedChanges.Contains(x.Id)).Change(x => x.Saved = status);
 
 		await InvokeAsync(StateHasChanged);
+	}
+
+	public async ValueTask DisposeAsync() {
+		if (JobsClient is not null) await JobsClient.DisposeAsync();
 	}
 
 	class JobsFilterForm {
