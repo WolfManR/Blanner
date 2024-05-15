@@ -109,6 +109,7 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 			var goalEnd = goalTime.Select(x => x.Start).DefaultIfEmpty().Max();
 			var goalElapsedTime = goal.TotalTime();
 			DateOnly goalDate = DateOnly.FromDateTime(goalStart.DateTime);
+			if (goalDate == DateOnly.MinValue) goalDate = DateOnly.FromDateTime(DateTime.Now);
             string goalName = goal.Name.Trim();
 			Contractor? goalContractor = goal.Contractor;
 			
@@ -122,6 +123,16 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 				.FirstOrDefaultAsync();
 
             if(context is not null) {
+				if(context.Changes.Count == 0) {
+					context.Changes.Add(new() {
+						Comment = context.Comment,
+						Start = context.Start,
+						End = context.End,
+						ElapsedTime = context.ElapsedTime,
+						Time = [.. context.Time]
+					});
+				}
+
                 context.Time.AddRange(goalTime);
 
                 context.Start = context.Time.Select(x => x.Start).DefaultIfEmpty().Min();
