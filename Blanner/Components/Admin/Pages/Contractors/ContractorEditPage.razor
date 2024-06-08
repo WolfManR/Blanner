@@ -43,7 +43,7 @@
 		if (Id == 0) return;
 		var url = NavManager.ToAbsoluteUri($"api/contractors/{Id}").AbsoluteUri;
 
-		var entity = await Http.GetFromJsonAsync<GoalDetailsData>(url);
+		var entity = await Http.GetFromJsonAsync<Contractor>(url);
 		if (entity is null) return;
 		Name = entity.Name;
 		StateHasChanged();
@@ -58,7 +58,7 @@
 		if (Id == 0) {
 			request = new ContractorCreateRequest(Name, DateTimeOffset.Now);
 
-			uri = "api/contractors/save";
+			uri = "api/contractors";
 			var url = NavManager.ToAbsoluteUri(uri).AbsoluteUri;
 
 			response = await Http.PostAsJsonAsync(url, request);
@@ -66,7 +66,7 @@
 		else {
 			request = new ContractorEditRequest(Id, Name, DateTimeOffset.Now);
 
-			uri = "api/goals/save/header";
+			uri = "api/contractors";
 			var url = NavManager.ToAbsoluteUri(uri).AbsoluteUri;
 
 			response = await Http.PutAsJsonAsync(url, request);
