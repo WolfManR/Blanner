@@ -1,0 +1,189 @@
+﻿
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject UserManager<User> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IDialogService DialogService
+@inject ILocalization Loc
+
+@attribute [Authorize]
+
+@implements IAsyncDisposable
+
+<div>
+	<EditForm FormName="GoalCreation" Model="NewGoal" OnValidSubmit="CreateGoal">
+		<div class="input-group mb-3">
+			<label class="input-group-text">@Loc.NameInputLabel</label>
+			<InputText class="form-control" @bind-Value="NewGoal.Name" aria-describedby="goalCreateBtn" />
+			<button class="btn btn-primary" id="goalCreateBtn">@Loc.BtnCreate</button>
+		</div>
+	</EditForm>
+</div>
+
+<div>
+	@* <EditForm FormName="GoalsFilterForm" Model="FilterForm" Enhance>
+		<label for="chbInsertActive">Insert Active</label>
+		<InputCheckbox @bind-Value="FilterForm.IncludeActive" id="chbInsertActive" />
+	</EditForm> *@
+
+	<div class="goals-table mt-2">
+		
+		<div class="goals-table-body" style="height: @(DataHeight); overflow-y: auto;">
+			@foreach (var group in _goals.GroupBy(x => new Value<Contractor, int>(x.Contractor)).OrderBy(x => x.Key.ToString())) {
+				Contractor? keyValue = group.Key;
+				
+				<ContextMenuTrigger MenuId="GoalContractorGroupContextMenu" Data="@group.Key">
+					<div class="row goals-table-item item-header align-items-baseline">
+						<div class="col-10 fw-bold">@(keyValue?.Name ?? Loc.ContractorNoneName)</div>
+						<div class="col-2 d-flex justify-content-end">
+							<button class="btn btn-danger" @onclick="() => DeleteContractorGroup(group.Key)" disabled><i class="bi bi-trash3"></i></button>
+						</div>
+					</div>
+				</ContextMenuTrigger>
+
+				@if (group.Count() > 0) {
+					@foreach (var item in group) {
+						<ContextMenuTrigger MenuId="GoalTemplateContextMenu" Data="@item">
+							<div class="row goals-table-item item align-items-baseline">
+								<div class="col-8 item-text">@item.Name</div>
+								<div class="col-4 d-flex justify-content-end align-bottom">
+									<div class="btn-toolbar" role="toolbar">
+										<div class="btn-group" role="group">
+											<button class="btn btn-secondary" @onclick="() => PushToActive(item)" @onclick:stopPropagation="true"><i class="bi bi-activity"></i></button>
+											<button class="btn btn-success" @onclick="() => ActivateGoal(item)" @onclick:stopPropagation="true"><i class="bi bi-play-fill"></i></button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</ContextMenuTrigger>
+					}
+				}
+			}
+		</div>
+	</div>
+</div>
+
+
+@code {
+	private GoalsClient? GoalsClient { get; set; }
+	private string _userId = "";
+	private List<GoalTemplateVM> _goals = new();
+
+	[Parameter]
+	public string DataHeight { get; set; } = "auto";
+
+	[SupplyParameterFromForm]
+	private GoalsFilterForm FilterForm { get; set; } = new();
+
+	[SupplyParameterFromForm]
+	private NameFormModel NewGoal { get; set; } = new();
+
+	protected override async Task OnInitializedAsync() {
+		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		_userId = UserManager.GetUserId(state.User) ?? "";
+
+		await LoadGoals();
+
+		GoalsClient = new(NavManager);
+
+		GoalsClient.OnGoalTemplateCreated += OnGoalTemplateCreated;
+		GoalsClient.OnGoalTemplateHeaderEdited += OnGoalTemplateHeaderEdited;
+		GoalsClient.OnGoalTemplateDeleted += OnGoalTemplateDeleted;
+
+		await GoalsClient.Start();
+	}
+
+	#region UI Handlers
+
+	private async Task LoadGoals() {
+		var url = NavManager.GetUriWithQueryParameters(NavManager.ToAbsoluteUri("api/goals/templates/").AbsoluteUri, new Dictionary<string, object?> {
+				{ "userId",  _userId }
+			});
+
+		var response = await Http.GetFromJsonAsync<List<GoalMainData>>(url);
+		if (response is null) {
+			_goals.Clear();
+			return;
+		}
+		_goals = response.Select(x => new GoalTemplateVM(x)).ToList();
+	}
+
+	private async Task CreateGoal(EditContext editContext) {
+		if (_userId.NullOrEmpty()) return;
+		GoalCreationData request = new(_userId, NewGoal.Name, string.Empty, null);
+
+		var url = NavManager.ToAbsoluteUri("api/goals/templates/save").AbsoluteUri;
+
+		var response = await Http.PostAsJsonAsync(url, request);
+	}
+
+	private Task DeleteContractorGroup(Value<Contractor, int> groupKey) {
+		// if (_goalsGroups.Remove(groupKey, out var list)) {
+		// 	_goals.RemoveAll(x => list.Contains(x));
+		// }
+		return Task.CompletedTask;
+	}
+
+	private async Task ActivateGoal(GoalTemplateVM item) {
+		GoalTemplateActivationData request = new(_userId, item.Id, DateTimeOffset.Now, true);
+
+		var url = NavManager.ToAbsoluteUri("api/goals/templates/activate").AbsoluteUri;
+
+		var response = await Http.PostAsJsonAsync(url, request);
+	}
+
+	private async Task PushToActive(GoalTemplateVM item) {
+		GoalTemplateActivationData request = new(_userId, item.Id, DateTimeOffset.Now);
+
+		var url = NavManager.ToAbsoluteUri("api/goals/templates/activate").AbsoluteUri;
+
+		var response = await Http.PostAsJsonAsync(url, request);
+	}
+
+	#endregion
+
+	#region Subscriptions
+
+	private async Task OnGoalTemplateCreated(string userId, int templateId, GoalMainData data) {
+		if (data.User?.Id != _userId) return;
+
+		GoalTemplateVM? template = _goals.Find(x => x.Id == templateId);
+		if (template is not null) return;
+		template = new(data);
+		_goals.Insert(0, template);
+
+		await InvokeAsync(StateHasChanged);
+	}
+
+	private async Task OnGoalTemplateHeaderEdited(string userId, int templateId, GoalTemplateHeaderData data) {
+		GoalTemplateVM? template = _goals.Find(x => x.Id == templateId);
+		if (template is null) return;
+
+		// var previousContractor = template.Contractor;
+		// var currentContractor = data.Contractor;
+
+		template.Set(data);
+
+		await InvokeAsync(StateHasChanged);
+	}
+
+	private async Task OnGoalTemplateDeleted(string userId, int templateId) {
+		GoalTemplateVM? template = _goals.Find(x => x.Id == templateId);
+		if (template is null) return;
+
+		_goals.Remove(template);
+		// Value<Contractor, int> contractor = new(template.Contractor);
+
+		await InvokeAsync(StateHasChanged);
+	}
+
+	#endregion
+
+	public async ValueTask DisposeAsync() {
+		if (GoalsClient is not null) await GoalsClient.DisposeAsync();
+	}
+
+	class GoalsFilterForm {
+		public bool IncludeActive { get; set; }
+	}
+}

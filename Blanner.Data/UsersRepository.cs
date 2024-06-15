@@ -16,7 +16,7 @@ public class UsersRepository(ApplicationDbContext dbContext) {
 	}
 
 	public Task<List<ActiveUserWorkData>> WorkingUsers() {
-		var query = _dbContext.ActiveGoals.AsNoTracking()
+		var query = _dbContext.Goals.AsNoTracking()
 			.Include(x => x.User)
 			.Where(x => x.User != null && x.CurrentlyActiveTime != null)
 			.GroupBy(x => x.User)

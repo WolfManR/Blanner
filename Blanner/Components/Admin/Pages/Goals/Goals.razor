@@ -1,29 +1,23 @@
 ﻿@page "/Admin/Goals"
 
-
 @inject ApplicationDbContext DbContext
 @inject NavigationManager NavManager
 @inject HttpClient Http
 
 <FluentGrid Justify="JustifyContent.SpaceBetween">
 	<FluentGridItem Style="min-width: 200px;">
-		<FluentLabel Typo="Typography.PageTitle">Goals</FluentLabel>
+		<FluentLabel Typo="Typography.PageTitle">Active Goals</FluentLabel>
 	</FluentGridItem>
 	<FluentGridItem Justify="JustifyContent.FlexEnd" Gap="10px">
 		<FluentAnchor Appearance="Appearance.Accent" Href="/Admin/Goals/0">New</FluentAnchor>
 	</FluentGridItem>
 </FluentGrid>
 
-<FluentDataGrid TGridItem="GoalListView" Items="@Query"	GridTemplateColumns=".5fr 2fr 1fr 1fr .5fr .6fr">
-	<PropertyColumn Property="@(p => p.Id)" Title="№"/>
+<FluentDataGrid TGridItem="ActiveGoalListView" Items="@Query" GridTemplateColumns=".5fr 2fr 1fr 1fr .5fr .6fr">
+	<PropertyColumn Property="@(p => p.Id)" Title="№" />
 	<PropertyColumn Property="@(p => p.Name)" Sortable="true" />
-	<PropertyColumn Property="@(p => p.ContractorName)" Title="Contractor" Sortable="true"/>
-	<PropertyColumn Property="@(p => p.UserName)" Title="User" Sortable="true"/>
-	<TemplateColumn Title="ActiveGoal">
-		@if(context.ActiveGoalId > 0) {
-			<FluentButton IconEnd="@(new Icons.Regular.Size16.Link())" />
-		}
-	</TemplateColumn>
+	<PropertyColumn Property="@(p => p.ContractorName)" Title="Contractor" Sortable="true" />
+	<PropertyColumn Property="@(p => p.UserName)" Title="User" Sortable="true" />
 	<TemplateColumn Title="Actions">
 		<FluentAnchor IconEnd="@(new Icons.Regular.Size16.Edit())" Href="@($"/Admin/Goals/{context.Id}")" />
 		<FluentButton IconEnd="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => DeleteGoal(context.Id, context.UserId))" />
@@ -31,32 +25,29 @@
 </FluentDataGrid>
 
 @code {
-	class GoalListView {
+	class ActiveGoalListView {
 		public int Id { get; set; }
 		public required string Name { get; set; }
 		public string? ContractorName { get; set; }
 		public required string UserName { get; set; }
 		public required string UserId { get; set; }
-		public int ActiveGoalId { get; set; }
 	}
 
-	IQueryable<GoalListView> Query => DbContext.Goals.Select(x => new GoalListView()
-		{
+	IQueryable<ActiveGoalListView> Query => DbContext.Goals.Select(x => new ActiveGoalListView() {
 			Id = x.Id,
 			Name = x.Name,
 			ContractorName = x.Contractor != null ? x.Contractor.Name : "",
 			UserName = x.User!.UserName!,
-			UserId = x.User!.Id!,
-			ActiveGoalId = x.ActiveGoal != null ? x.ActiveGoal.Id : 0
+			UserId = x.User!.Id!
 		});
 
 	private async Task DeleteGoal(int Id, string UserId) {
-		GoalDeleteData request = new(Id, UserId);
+		GoalDeleteData request = new(UserId, Id);
 
-		var url = NavManager.ToAbsoluteUri("api/goals/delete").AbsoluteUri;
+		var url = NavManager.ToAbsoluteUri("api/goals/active/delete").AbsoluteUri;
 
 		var response = await Http.PostAsJsonAsync(url, request);
-		
+
 		NavManager.Refresh(true);
 	}
 

@@ -6,5 +6,5 @@ public class ActiveGoalTime : ITime {
     public DateTimeOffset Start { get; set; }
     public DateTimeOffset End { get; set; }
 
-    public ActiveGoal ActiveGoal { get; init; } = null!;
+    public Goal ActiveGoal { get; init; } = null!;
 }

@@ -4,6 +4,7 @@
 @inject HttpClient Http
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IDialogService DialogService
 
 <EditForm FormName="AdminGoalEditForm" Model="this">
 	<DataAnnotationsValidator />
@@ -15,17 +16,17 @@
 		<div>
 			<FluentTextField Name="Name" @bind-Value="Name" Label="Name" Style="width: 40rem" Required />
 		</div>
-			<div class="mb-3">
-				<label>
-					Contractor
+		<div class="mb-3">
+			<label>
+				Contractor
 				<InputSelect class="form-select" @bind-Value="Contractor" DisplayName="Contractor">
 					<option value="0">Empty</option>
 					@foreach (var item in _contractors) {
 						<option value="@item.Id">@item.Name</option>
 					}
 				</InputSelect>
-				</label>
-			</div>
+			</label>
+		</div>
 
 		<div class="mb-3">
 			<label>
@@ -38,20 +39,60 @@
 				</InputSelect>
 			</label>
 		</div>
+
+		<InputTextArea class="form-control" @bind-Value="Comment" style="height:40vh;" DisplayName="Comment" />
 	</FluentStack>
 </EditForm>
 
+<div class="mt-2 mb-1">
+	<table class="table table-bordered">
+		<thead>
+			<tr>
+				<th>Id</th>
+				<th>From</th>
+				<th>To</th>
+				<th>Time</th>
+				<th>
+					<div>
+						<button class="btn-lg" @onclick="AddTimeActiveGoal" disabled="@(Id == 0)"><i class="bi bi-plus-square-fill"></i></button>
+					</div>
+				</th>
+			</tr>
+		</thead>
+
+		<tbody>
+			@foreach (var item in Timers) {
+				<tr>
+					<td>@item.Id</td>
+					<td>@item.Start.ToString("t")</td>
+					<td>@item.End.ToString("t")</td>
+					<td>@item.Time().ToString(UserSettings.DetailedTimeFormatterValue())</td>
+					<td>
+						@if (item.Id != ActiveTimerId) {
+							<div>
+								<button class="btn btn-danger" @onclick="() => DeleteTime(item)"><i class="bi bi-trash3"></i></button>
+								<button class="btn btn-info" @onclick="() => EditTimeActiveGoal(item)"><i class="bi bi-pencil-square"></i></button>
+							</div>
+						}
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+</div>
+
 <FluentStack>
 	<FluentButton OnClick="Save">Save</FluentButton>
-	@if(ActiveGoalId is not null) {
-		<FluentAnchor Href="@($"/Admin/ActiveGoals/{ActiveGoalId}")">Active</FluentAnchor>
-	}
 </FluentStack>
+
 
 @code {
 	private List<Contractor> _contractors = [];
 	private List<UserSelectListData> _users = [];
 	private string _userId = "";
+
+	private UserSettings? UserSettings { get; set; }
+	private ActiveGoalTimeEditForm ActiveGoalTimeEditFormModel { get; set; } = ActiveGoalTimeEditForm.Create();
 
 
 	[Parameter]
@@ -60,7 +101,9 @@
 	public string? Name { get; set; }
 	public int? Contractor { get; set; }
 	public string? User { get; set; }
-	public int? ActiveGoalId { get; set; }
+	public string Comment { get; set; } = string.Empty;
+	public int? ActiveTimerId { get; set; }
+	public List<ActiveGoalTimeData> Timers { get; set; } = [];
 
 	protected override async Task OnInitializedAsync() {
 		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -76,14 +119,15 @@
 
 	protected override async Task OnParametersSetAsync() {
 		if (Id == 0) return;
-		var url = NavManager.ToAbsoluteUri($"api/goals/{Id}").AbsoluteUri;
+		var url = NavManager.ToAbsoluteUri($"api/goals/active/{Id}").AbsoluteUri;
 
-		var entity = await Http.GetFromJsonAsync<GoalDetailsData>(url);
+		var entity = await Http.GetFromJsonAsync<ActiveGoalDetailsData>(url);
 		if (entity is null) return;
 		Name = entity.Name;
 		Contractor = entity.Contractor?.Id;
 		User = entity.User?.Id;
-		ActiveGoalId = entity.ActiveGoalId;
+		Comment = entity.Comment;
+		Timers = entity.GoalTime;
 		StateHasChanged();
 	}
 
@@ -93,17 +137,17 @@
 		object request;
 		string uri;
 
-		if(Id == 0) {
-			request = new GoalCreationData(Name, _userId, Contractor);
+		if (Id == 0) {
+			request = new GoalCreationData(_userId, Name, Comment, Contractor);
 
-			uri = "api/goals/save";
+			uri = "api/goals/active/save";
 		}
 		else {
 			if (User is null) return;
-			int? contractorId = Contractor; 
-			request = new GoalHeaderChangesSaveData(Id, User, Name, contractorId);
+			int? contractorId = Contractor;
+			request = new GoalHeaderDataChanges(User, Id, Name, Comment, contractorId);
 
-			uri = "api/goals/save/header";
+			uri = "api/goals/active/save/header";
 		}
 
 		var url = NavManager.ToAbsoluteUri(uri).AbsoluteUri;
@@ -111,5 +155,83 @@
 		var response = await Http.PostAsJsonAsync(url, request);
 
 		if (response.IsSuccessStatusCode) NavManager.NavigateTo("/Admin/Goals");
+	}
+
+	private async Task AddTimeActiveGoal() {
+		ActiveGoalTimeEditFormModel = ActiveGoalTimeEditForm.Create();
+		await OpenDialog(AddTimeActiveGoalCompletion);
+	}
+
+	private async Task EditTimeActiveGoal(ActiveGoalTimeData item) {
+		ActiveGoalTimeEditFormModel = ActiveGoalTimeEditForm.Create(item);
+		await OpenDialog(EditTimeActiveGoalCompletion);
+	}
+
+	private async ValueTask OpenDialog(Func<TimeRange?, ValueTask> dialogCompletion) {
+		TimeRangeDialogParameters parameters = new() {
+				TimeRange = new() {
+					Start = ActiveGoalTimeEditFormModel.Start,
+					End = ActiveGoalTimeEditFormModel.End
+				}
+
+			};
+
+		DialogParameters dialogParameters = new() {
+				Modal = true,
+				PreventScroll = true,
+				ShowDismiss = true
+			};
+
+		IDialogReference dialog = await DialogService.ShowDialogAsync<TimeRangeEditDialog>(parameters, dialogParameters);
+		var result = await dialog.Result;
+		if (!result.Cancelled && result.Data != null) {
+			var timeRange = (TimeRange?) result.Data;
+			await dialogCompletion.Invoke(timeRange);
+		}
+	}
+
+	private async ValueTask AddTimeActiveGoalCompletion(TimeRange? timeRange) {
+		if (timeRange is null) {
+			ActiveGoalTimeEditFormModel = ActiveGoalTimeEditForm.Create();
+			return;
+		}
+
+		GoalTimeCreationData request = new(
+			Id,
+			_userId,
+			timeRange.Start,
+			timeRange.End,
+			timeRange.End - timeRange.Start);
+
+		var url = NavManager.ToAbsoluteUri($"api/goals/active/time/add").AbsoluteUri;
+
+		var response = await Http.PostAsJsonAsync(url, request);
+	}
+
+	private async ValueTask EditTimeActiveGoalCompletion(TimeRange? timeRange) {
+		if (timeRange is null) {
+			ActiveGoalTimeEditFormModel = ActiveGoalTimeEditForm.Create();
+			return;
+		}
+
+		GoalTimeEditData request = new(
+			Id,
+			ActiveGoalTimeEditFormModel.Id,
+			_userId,
+			timeRange.Start,
+			timeRange.End,
+			timeRange.End - timeRange.Start);
+
+		var url = NavManager.ToAbsoluteUri($"api/goals/active/time/edit").AbsoluteUri;
+
+		var response = await Http.PostAsJsonAsync(url, request);
+	}
+
+	private async Task DeleteTime(ActiveGoalTimeData time) {
+		GoalTimeDeleteData request = new(Id, time.Id, _userId);
+
+		var url = NavManager.ToAbsoluteUri($"api/goals/active/time/delete").AbsoluteUri;
+
+		var response = await Http.PostAsJsonAsync(url, request);
 	}
 }

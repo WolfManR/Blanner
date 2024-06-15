@@ -25,7 +25,7 @@
 				<FluentButton slot="end" Appearance="Appearance.Accent" OnClick="() => OpenActiveGoalCreator()">@Loc.BtnCreate</FluentButton>
 			</FluentToolbar>
 
-			<ActiveGoals OnSelected="OpenDetails" OnOpenGoal="OpenGoal" />
+			<Goals OnSelected="OpenDetails" OnOpenGoal="OpenGoal" />
 		</div>
 	</Panel1>
 
@@ -38,16 +38,16 @@
 
 		    	<CascadingValue Value="EditForm">
 		    		@if (_sidePanelMode is SidePanelMode.Create) {
-		    			<ActiveGoalCreator />
+		    			<GoalCreator/>
 		    		}
 
 		    		@if (_sidePanelMode is SidePanelMode.Edit) {
-		    			<ActiveGoalEditor />
+		    			<GoalEditor />
 		    		}
 		    	</CascadingValue>
 
                 @if (_sidePanelMode is SidePanelMode.GoalsList) {
-                    <Goals DataHeight="76dvh"/>
+                    <GoalsTemplates DataHeight="76dvh"/>
                 }
 
             </FluentCard>
@@ -73,18 +73,18 @@
 
         GoalsClient = new(NavManager);
 
+        // GoalsClient.OnGoalTemplateHeaderEdited += OnGoalTemplateHeaderEdited;
+        // GoalsClient.OnGoalTemplateDeleted += OnGoalTemplateDeleted;
+
+        GoalsClient.OnGoalActivated += OnGoalActivated;
         GoalsClient.OnGoalHeaderEdited += OnGoalHeaderEdited;
         GoalsClient.OnGoalDeleted += OnGoalDeleted;
 
-        GoalsClient.OnGoalActivated += OnGoalActivated;
-        GoalsClient.OnActiveGoalHeaderEdited += OnActiveGoalHeaderEdited;
-        GoalsClient.OnActiveGoalDeleted += OnActiveGoalDeleted;
-
         GoalsClient.OnTimerStopped += OnTimerStopped;
 
-        GoalsClient.OnActiveGoalTimerCreated += OnActiveGoalTimerCreated;
-        GoalsClient.OnActiveGoalTimerEdited += OnActiveGoalTimerEdited;
-        GoalsClient.OnActiveGoalTimerDeleted += OnActiveGoalTimerDeleted;
+        GoalsClient.OnGoalTimerCreated += OnGoalTimerCreated;
+        GoalsClient.OnGoalTimerEdited += OnGoalTimerEdited;
+        GoalsClient.OnGoalTimerDeleted += OnGoalTimerDeleted;
 
         GoalsClient.OnJobsBuilded += OnJobsBuilded;
 
@@ -94,7 +94,7 @@
     #region UI Handlers
 
     private async Task OpenDetails(int goalId) {
-        var url = NavManager.ToAbsoluteUri($"api/goals/active/{goalId}").AbsoluteUri;
+        var url = NavManager.ToAbsoluteUri($"api/goals/active/details/{goalId}").AbsoluteUri;
 
         var response = await Http.GetFromJsonAsync<ActiveGoalDetailsData>(url);
         EditForm.Init(response);
@@ -123,7 +123,7 @@
                 ShowDismiss = true
             };
 
-        IDialogReference dialog = await DialogService.ShowDialogAsync<GoalEditor>(new GoalEditParameters(id), parameters);
+        IDialogReference dialog = await DialogService.ShowDialogAsync<GoalTemplateEditor>(new GoalEditParameters(id), parameters);
         await dialog.Result;
     }
 
@@ -148,19 +148,53 @@
 
     #region Subscriptions
 
-    private async Task OnGoalHeaderEdited(int goalId, string userId, GoalHeaderData data) {
+    // private async Task OnGoalTemplateHeaderEdited(string userId, int goalId, GoalTemplateHeaderData data) {
+    //     bool changed = false;
+    //     if (EditForm.Id == goalId) {
+    //         EditForm.Set(data);
+    //         changed = true;
+    //         return;
+    //     }
+
+    //     if (changed) await InvokeAsync(StateHasChanged);
+    // }
+
+    // private async Task OnGoalTemplateDeleted(string userId, int goalId) {
+    //     if (EditForm.Id == goalId) {
+    //         EditForm.Init();
+    //     }
+
+    //     await InvokeAsync(StateHasChanged);
+    // }
+
+
+    private async Task OnGoalActivated(string userId, int goalId, ActiveGoalTimeData? timerData) {
         bool changed = false;
+
         if (EditForm.Id == goalId) {
-            EditForm.Set(data);
+            EditForm.ActiveTimerId = timerData?.Id;
+            if (timerData is not null && EditForm.GoalTime.All(X => X.Id != timerData.Id)) {
+                EditForm.GoalTime.Add(timerData);
+                EditForm.GoalTime.Sort();
+            }
             changed = true;
-            return;
         }
 
         if (changed) await InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnGoalDeleted(int goalId, string userId) {
-        if (EditForm.GoalId == goalId) {
+    private async Task OnGoalHeaderEdited(string userId, int goalId, ActiveGoalHeaderData data) {
+        bool changed = false;
+        if (EditForm.Id == goalId) {
+            EditForm.Set(data);
+            changed = true;
+        }
+
+        if (changed) await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnGoalDeleted(string userId, int goalId) {
+        if (EditForm.Id == goalId) {
             EditForm.Init();
         }
 
@@ -168,38 +202,7 @@
     }
 
 
-    private async Task OnGoalActivated(int goalId, int activeGoalId, string userId, ActiveGoalData data) {
-        bool changed = false;
-
-        if (EditForm.Id != goalId) {
-            EditForm.ActiveTimerId = data.ActiveTimerId;
-            changed = true;
-        }
-
-        if (changed) await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task OnActiveGoalHeaderEdited(int goalId, string userId, ActiveGoalHeaderData data) {
-        bool changed = false;
-        if (EditForm.Id == goalId) {
-            EditForm.Set(data);
-            changed = true;
-            return;
-        }
-
-        if (changed) await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task OnActiveGoalDeleted(int goalId, string userId) {
-        if (EditForm.GoalId == goalId) {
-            EditForm.Init();
-        }
-
-        await InvokeAsync(StateHasChanged);
-    }
-
-
-    private async Task OnTimerStopped(int goalId, string userId, TimeSpan _) {
+    private async Task OnTimerStopped(string userId, int goalId, TimeSpan _) {
         if (EditForm.Id != goalId) return;
 
         EditForm.ActiveTimerId = null;
@@ -208,7 +211,7 @@
     }
 
 
-    private async Task OnActiveGoalTimerCreated(int goalId, string userId, ActiveGoalTimeData timerData, TimeSpan _) {
+    private async Task OnGoalTimerCreated(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan _) {
         if (EditForm.Id != goalId) return;
 
         ActiveGoalTimeData? goalTime = EditForm.GoalTime.Find(x => x.Id == timerData.Id);
@@ -220,7 +223,7 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnActiveGoalTimerEdited(int goalId, string userId, ActiveGoalTimeData timerData, TimeSpan _) {
+    private async Task OnGoalTimerEdited(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan _) {
         if (EditForm.Id != goalId) return;
 
         ActiveGoalTimeData? goalTime = EditForm.GoalTime.Find(x => x.Id == timerData.Id);
@@ -228,14 +231,13 @@
 
         goalTime.Start = timerData.Start;
         goalTime.End = timerData.End;
-        goalTime.Time = timerData.End - timerData.Start;
 
         EditForm.GoalTime.Sort();
 
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnActiveGoalTimerDeleted(int goalId, int timerId, string userId, TimeSpan goalTotalTime) {
+    private async Task OnGoalTimerDeleted(string userId, int goalId, int timerId, TimeSpan goalTotalTime) {
         if (EditForm.Id != goalId) return;
 
         ActiveGoalTimeData? goalTime = EditForm.GoalTime.Find(x => x.Id == timerId);

@@ -61,7 +61,7 @@
 	private async Task Save() {
 		if (EditForm?.Name is null) return;
 
-		GoalCreationData request = new(EditForm.Name, _userId, EditForm.Contractor, EditForm.Comment);
+		GoalCreationData request = new(EditForm.Name, _userId, EditForm.Comment, EditForm.Contractor);
 
 		string uri = "api/goals/active/create";
 

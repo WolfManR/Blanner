@@ -4,6 +4,7 @@ using Blanner.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace SQLServerMigrations.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240613173745_RemakeOfGoalTemplates")]
+    partial class RemakeOfGoalTemplates
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -107,7 +110,7 @@ namespace SQLServerMigrations.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Goals");
+                    b.ToTable("ActiveGoals", (string)null);
                 });
 
             modelBuilder.Entity("Blanner.Data.Models.GoalTemplate", b =>
@@ -145,7 +148,7 @@ namespace SQLServerMigrations.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("GoalsTemplates");
+                    b.ToTable("Goals", (string)null);
                 });
 
             modelBuilder.Entity("Blanner.Data.Models.JobChanges", b =>
@@ -512,7 +515,7 @@ namespace SQLServerMigrations.Migrations
                     b.HasOne("Blanner.Data.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
                     b.Navigation("Contractor");
@@ -530,7 +533,7 @@ namespace SQLServerMigrations.Migrations
                     b.HasOne("Blanner.Data.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
                     b.Navigation("Contractor");

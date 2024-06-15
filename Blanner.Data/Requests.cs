@@ -3,17 +3,21 @@
 public sealed record ContractorCreateRequest(string Name, DateTimeOffset CreatedAt);
 public sealed record ContractorEditRequest(int Id, string Name, DateTimeOffset UpdatedAt);
 
-public sealed record TimerActivationData(int? GoalId, int? ActiveGoalId, DateTimeOffset ActivationDate, string UserId);
-public sealed record TimerDeactivationData(int GoalId, string UserId, DateTimeOffset StopDate);
-public sealed record GoalPushToActiveData(int GoalId, string UserId, DateTimeOffset ActivationDate);
-public sealed record GoalHeaderChangesSaveData(int GoalId, string UserId, string Name, int? ContractorId);
-public sealed record GoalCreationData(string Name, string UserId, int? ContractorId, string Comment = "");
-public sealed record ActiveGoalPersistData(int GoalId, string UserId);
-public sealed record GoalDeleteData(int GoalId, string UserId);
-public sealed record GoalTimeDeleteData(int GoalId, int TimeId, string UserId);
-public sealed record ActiveGoalHeaderChangesSaveData(int GoalId, string UserId, string Name, int? ContractorId, string Comment);
+public sealed record GoalTemplateCreationData(string UserId, string Name, string Comment, int? ContractorId);
+public sealed record GoalTemplateHeaderDataChanges(string UserId, int Id, string Name, string Comment, int? ContractorId);
+public sealed record GoalTemplateActivationData(string UserId, int TemplateId, DateTimeOffset ActivationDate, bool StartTimerImediate = false);
+
+public sealed record GoalCreationData(string UserId, string Name, string Comment, int? ContractorId);
+public sealed record GoalHeaderDataChanges(string UserId, int Id, string Name, string Comment, int? ContractorId);
+public sealed record GoalDeleteData(string UserId, int GoalId);
+public sealed record GoalSaveAsTemplateData(int GoalId, string UserId);
+
+public sealed record GoalActivationData(string UserId, int GoalId, DateTimeOffset ActivationDate);
+public sealed record GoalDeactivationData(string UserId, int GoalId,  DateTimeOffset DeactivationDate);
+
 public sealed record GoalTimeCreationData(int GoalId, string UserId, DateTimeOffset Start, DateTimeOffset? End, TimeSpan? Time);
 public sealed record GoalTimeEditData(int GoalId, int TimerId, string UserId, DateTimeOffset Start, DateTimeOffset? End, TimeSpan? Time);
+public sealed record GoalTimeDeleteData(int GoalId, int TimeId, string UserId);
 
 public sealed record CompleteJobData(string UserId, DateTimeOffset CompleteDate);
 public sealed record JobsListData(string UserId, DateOnly Start, DateOnly End);

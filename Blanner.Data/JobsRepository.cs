@@ -73,7 +73,7 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 		if (user is null) return false;
 
 		await using (var transaction = await _dbContext.Database.BeginTransactionAsync()) {
-			var activeGoals = await _dbContext.ActiveGoals.AsNoTracking()
+			var activeGoals = await _dbContext.Goals.AsNoTracking()
 			.Include(x => x.User)
 			.Where(x => x.User != null && x.User.Id == data.UserId && x.CurrentlyActiveTime != null)
 			.Select(x => new { GoalId = x.Id, TimerId = x.CurrentlyActiveTime!.Value })
@@ -83,12 +83,12 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 			var activeGoalsId = activeGoals.Keys.ToHashSet();
 
 			await _dbContext.ActiveGoalsTime.Where(x => activeTimersId.Contains(x.Id)).ExecuteUpdateAsync(setters => setters.SetProperty(x => x.End, data.BuildDate));
-			await _dbContext.ActiveGoals.Where(x => activeGoalsId.Contains(x.Id)).ExecuteUpdateAsync(setters => setters.SetProperty(x => x.CurrentlyActiveTime, x => null));
+			await _dbContext.Goals.Where(x => activeGoalsId.Contains(x.Id)).ExecuteUpdateAsync(setters => setters.SetProperty(x => x.CurrentlyActiveTime, x => null));
 
 			await transaction.CommitAsync();
 		}
 
-		var goals = await _dbContext.ActiveGoals
+		var goals = await _dbContext.Goals
 			.Include(x => x.User).Where(x => x.User != null && x.User.Id == data.UserId)
 			.Include(x => x.Contractor)
 			.Include(x => x.Tasks.Where(x => x.Done))
@@ -171,7 +171,7 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 		await _dbContext.SaveChangesAsync();
 
 		await using (var transaction = await _dbContext.Database.BeginTransactionAsync()) {
-			await _dbContext.ActiveGoals
+			await _dbContext.Goals
 				.Include(x => x.User)
                 .Where(x => x.User != null && x.User.Id == data.UserId)
                 .Include(x => x.GoalTime)
@@ -181,8 +181,7 @@ public class JobsRepository(ApplicationDbContext dbContext) {
 				.Include(x => x.User)
 				.Where(x => x.User != null && x.User.Id == data.UserId)
 				.Include(x => x.Goal)
-				.Include(x => x.ActiveGoal)
-				.Where(x => x.Done && x.Goal != null && x.ActiveGoal != null)
+				.Where(x => x.Done && x.Goal != null)
 				.ExecuteDeleteAsync();
 
 			await transaction.CommitAsync();

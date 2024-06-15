@@ -9,7 +9,6 @@ public class ActiveGoalVM() {
 	public string Name { get; set; } = string.Empty;
 	public string Comment { get; set; } = string.Empty;
 	public Contractor? Contractor { get; set; }
-	public int? GoalId { get; set; }
 	// ToDo
 	public TimeSpan TotalElapsedTime { get; set; }
 	public TimeSpan TimerTime { get; set; }
@@ -20,12 +19,11 @@ public class ActiveGoalVM() {
 
 	public bool IsOnEdit { get; set; }
 
-	public ActiveGoalVM(ActiveGoalData data) : this() {
+	public ActiveGoalVM(ActiveGoalListData data) : this() {
 		Id = data.Id;
 		Name = data.Name;
 		Comment = data.Comment;
 		Contractor = data.Contractor;
-		GoalId = data.GoalId;
 		TotalElapsedTime = data.TotalElapsedTime;
 		ActivationTime = data.ActivationTime;
 		ActiveTimerId = data.ActiveTimerId;
@@ -38,12 +36,12 @@ public class ActiveGoalVM() {
 		Comment = data.Comment;
 		Contractor = data.Contractor;
 	}
-	public void Set(GoalHeaderData data) {
+	public void Set(GoalTemplateHeaderData data) {
 		Name = data.Name;
 		Contractor = data.Contractor;
 	}
 
-	public void SetActiveData(ActiveGoalData data) {
+	public void SetActiveData(ActiveGoalListData data) {
 		TotalElapsedTime = data.TotalElapsedTime;
 		ActivationTime = data.ActivationTime;
 		ActiveTimerId = data.ActiveTimerId;

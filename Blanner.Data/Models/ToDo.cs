@@ -5,6 +5,5 @@ public class ToDo {
     public string? Name { get; set; }
 
     public Goal? Goal { get; set; }
-    public ActiveGoal? ActiveGoal { get; set; }
     public User? User { get; set; }
 }

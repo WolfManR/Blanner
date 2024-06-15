@@ -1,108 +1,77 @@
-﻿using Blanner.Data.Models;
+﻿using Blanner.Data.DataModels;
+using Blanner.Data.Models;
 
 using System.Text.Json.Serialization;
 
 namespace Blanner.Data;
 
-public class GoalData {
+public class GoalMainData {
 	[JsonConstructor]
-	public GoalData() { }
+	public GoalMainData() { }
 
-	public GoalData(Goal data) {
-		Id = data.Id;
-		Name = data.Name;
-		Contractor = data.Contractor;
-		ActiveGoalId = data.ActiveGoal?.Id;
-		Tasks = data.Tasks;
-		User = data.User is null ? null : new(data.User);
-	}
-
-	public int Id { get; set; }
-	public string Name { get; set; } = string.Empty;
-	public Contractor? Contractor { get; set; }
-    public UserInfoData? User { get; set; }
-    public int? ActiveGoalId { get; set; }
-	public List<ToDo> Tasks { get; set; } = [];
-}
-
-public class GoalDetailsData {
-	[JsonConstructor]
-	public GoalDetailsData() { }
-
-	public GoalDetailsData(Goal data) {
-		Id = data.Id;
-		Name = data.Name;
-		Contractor = data.Contractor;
-		ActiveGoalId = data.ActiveGoal?.Id;
-		User = data.User;
-		Tasks = data.Tasks;
-	}
-
-	public int Id { get; set; }
-	public string Name { get; set; } = string.Empty;
-	public Contractor? Contractor { get; set; }
-	public int? ActiveGoalId { get; set; }
-	public User? User { get; set; }
-	public List<ToDo> Tasks { get; set; } = [];
-}
-
-public class ActiveGoalData {
-	[JsonConstructor]
-	public ActiveGoalData() { }
-
-	public ActiveGoalData(ActiveGoal data) {
+	public GoalMainData(GoalTemplate data) {
 		Id = data.Id;
 		Name = data.Name;
 		Comment = data.Comment;
 		Contractor = data.Contractor;
-		GoalId = data.Goal?.Id;
-		Tasks = data.Tasks;
+		User = data.User is not null ? new(data.User) : null;
+	}
+
+	public int Id { get; set; }
+	public string Name { get; set; } = string.Empty;
+	public string Comment { get; set; } = string.Empty;
+	public Contractor? Contractor { get; set; }
+	public UserInfoData? User { get; set; }
+}
+
+public class ActiveGoalListData : GoalMainData {
+	[JsonConstructor]
+	public ActiveGoalListData() { }
+
+	public ActiveGoalListData(Goal data) {
+		Id = data.Id;
+		Name = data.Name;
+		Comment = data.Comment;
+		Contractor = data.Contractor;
+		User = data.User is null ? null : new(data.User);
+
 		TotalElapsedTime = data.TotalTime();
 		ActivationTime = data.CurrentlyActiveTime == null ? DateTimeOffset.MinValue : data.GoalTime.Find(c => c.Id == data.CurrentlyActiveTime)!.Start;
 		ActiveTimerId = data.CurrentlyActiveTime;
-		User = data.User is null ? null : new(data.User);
+
+		Tasks = data.Tasks;
 	}
 
-	public int Id { get; set; }
-	public string Name { get; set; } = string.Empty;
-	public string Comment { get; set; } = string.Empty;
-	public Contractor? Contractor { get; set; }
-	public int? GoalId { get; set; }
-	public UserInfoData? User { get; set; }
-	public List<ToDo> Tasks { get; set; } = [];
 	public TimeSpan TotalElapsedTime { get; set; }
 	public DateTimeOffset ActivationTime { get; set; }
 	public int? ActiveTimerId { get; set; }
+	public List<ToDo> Tasks { get; set; } = [];
 }
-public class ActiveGoalDetailsData {
+public class ActiveGoalDetailsData : GoalMainData {
 	[JsonConstructor]
 	public ActiveGoalDetailsData() { }
 
-	public ActiveGoalDetailsData(ActiveGoal data) {
+	public ActiveGoalDetailsData(Goal data) {
 		Id = data.Id;
 		Name = data.Name;
 		Comment = data.Comment;
 		Contractor = data.Contractor;
-		User = data.User;
-		GoalId = data.Goal?.Id;
-		Tasks = data.Tasks;
+		User = data.User is null ? null : new(data.User);
+
 		GoalTime = data.GoalTime.Select(x => new ActiveGoalTimeData(x)).ToList();
 		ActiveTimerId = data.CurrentlyActiveTime;
+
+		Tasks = data.Tasks;
 	}
 
-	public int Id { get; set; }
-	public string Name { get; set; } = string.Empty;
-	public string Comment { get; set; } = string.Empty;
-	public Contractor? Contractor { get; set; }
-	public User? User { get; set; }
-	public int? GoalId { get; set; }
-	public List<ToDo> Tasks { get; set; } = [];
 	public List<ActiveGoalTimeData> GoalTime { get; set; } = [];
 	public int? ActiveTimerId { get; set; }
+
+	public List<ToDo> Tasks { get; set; } = [];
 }
 
 
-public class ActiveGoalTimeData : IComparable<ActiveGoalTimeData> {
+public class ActiveGoalTimeData : IComparable<ActiveGoalTimeData>, ITime {
 	[JsonConstructor]
 	public ActiveGoalTimeData() {
 
@@ -112,13 +81,11 @@ public class ActiveGoalTimeData : IComparable<ActiveGoalTimeData> {
 		Id = data.Id;
 		Start = data.Start;
 		End = data.End;
-		Time = data.Time();
 	}
 
 	public int Id { get; set; }
 	public DateTimeOffset Start { get; set; }
 	public DateTimeOffset End { get; set; }
-	public TimeSpan Time { get; set; }
 
 	public int CompareTo(ActiveGoalTimeData? other) {
 		if (other is null) return 1;

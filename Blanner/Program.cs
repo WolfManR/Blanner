@@ -49,12 +49,16 @@ try {
 			flushToDiskInterval: TimeSpan.FromSeconds(1)));
 
 	builder.Services.RegisterServices(builder.Configuration);
+	builder.Services.AddEndpointsApiExplorer();
+	builder.Services.AddSwaggerGen();
 
 	var app = builder.Build();
 
 	// Configure the HTTP request pipeline.
 	if (app.Environment.IsDevelopment()) {
 		app.UseMigrationsEndPoint();
+		app.UseSwagger();
+		app.UseSwaggerUI();
 	}
 	else {
 		app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -153,8 +157,8 @@ internal static class HostExtensions {
 
 
 		services.AddScoped<ContractorsRepository>();
+		services.AddScoped<GoalsTemplatesRepository>();
 		services.AddScoped<GoalsRepository>();
-		services.AddScoped<ActiveGoalsRepository>();
 		services.AddScoped<JobsRepository>();
 		services.AddScoped<UsersRepository>();
 

@@ -1,0 +1,75 @@
+﻿@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject UserManager<User> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILocalization Loc
+
+@attribute [Authorize]
+@implements IDialogContentComponent<GoalEditParameters>
+
+<FluentDialogHeader>@Loc.GoalEditorHeader</FluentDialogHeader>
+
+<FluentDialogBody>
+	<EditForm FormName="GoalEditorEditForm" Model="EditForm" class="d-flex flex-column gap-2 mt-3">
+		<DataAnnotationsValidator/>
+
+		<div class="input-group mb-3">
+			<label class="input-group-text">@Loc.NameInputLabel</label>
+			<InputText class="form-control" @bind-Value="EditForm.Name" DisplayName="Name" />
+		</div>
+
+		<div class="input-group mb-3">
+			<label class="input-group-text" for="goalContractorInput">@Loc.ContractorInputLabel</label>
+			<InputSelect class="form-select" @bind-Value="EditForm.Contractor" id="goalContractorInput" DisplayName="Contractor">
+				<option value="0">@Loc.OptionEmpty</option>
+				@foreach (var item in Contractors) {
+					<option value="@item.Id">@item.Name</option>
+				}
+			</InputSelect>
+		</div>
+
+		<InputTextArea class="form-control" @bind-Value="EditForm.Comment" style="height:40vh;" DisplayName="Comment" />
+	</EditForm>
+</FluentDialogBody>
+
+<FluentDialogFooter>
+	<FluentButton Appearance="Appearance.Accent" OnClick="() => SaveGoalChanges(true)" IconStart="@(new Icons.Regular.Size24.Save())">@Loc.BtnSaveAndClose</FluentButton>
+	<FluentButton Appearance="Appearance.Outline" OnClick="() => SaveGoalChanges()" IconStart="@(new Icons.Regular.Size24.Save())">@Loc.BtnSave</FluentButton>
+</FluentDialogFooter>
+
+@code {
+	private string _userId = "";
+	private List<Contractor> Contractors { get; set; } = new();
+    [CascadingParameter]
+    public FluentDialog? Dialog { get; set; }
+
+    [Parameter]
+    public GoalEditParameters Content { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    public GoalTemplateEditForm EditForm { get; set; } = new();
+
+    protected override async Task OnInitializedAsync() {
+		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		_userId = UserManager.GetUserId(state.User) ?? "";
+
+		var uri = NavManager.ToAbsoluteUri("api/contractors").AbsoluteUri;
+		Contractors = await Http.GetFromJsonAsync<List<Contractor>>(uri) ?? new();
+
+		var url = NavManager.ToAbsoluteUri($"api/goals/templates/{Content.Id}").AbsoluteUri;
+
+		var data = await Http.GetFromJsonAsync<GoalMainData>(url);
+		EditForm.Set(data);
+	}
+
+	private async Task SaveGoalChanges(bool close = false) {
+		GoalTemplateHeaderDataChanges request = new(_userId, EditForm.Id, EditForm.Name, EditForm.Comment, EditForm.Contractor);
+
+		var url = NavManager.ToAbsoluteUri($"api/goals/templates/save/header").AbsoluteUri;
+
+		var response = await Http.PostAsJsonAsync(url, request);
+
+		if(close && Dialog is not null)
+			await Dialog.CloseAsync();
+	}
+}

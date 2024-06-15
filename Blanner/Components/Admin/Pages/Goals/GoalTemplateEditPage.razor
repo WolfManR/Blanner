@@ -1,0 +1,115 @@
+﻿@page "/Admin/Goals/Templates/{Id:int}"
+
+@inject NavigationManager NavManager
+@inject HttpClient Http
+@inject UserManager<User> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<EditForm FormName="AdminGoalTemplateEditForm" Model="this">
+	<DataAnnotationsValidator />
+	<FluentValidationSummary />
+
+	<FluentStack Orientation="Orientation.Vertical">
+		<input @bind-value="@Id" hidden />
+
+		<div>
+			<FluentTextField Name="Name" @bind-Value="Name" Label="Name" Style="width: 40rem" Required />
+		</div>
+			<div class="mb-3">
+				<label>
+					Contractor
+				<InputSelect class="form-select" @bind-Value="Contractor" DisplayName="Contractor">
+					<option value="0">Empty</option>
+					@foreach (var item in _contractors) {
+						<option value="@item.Id">@item.Name</option>
+					}
+				</InputSelect>
+				</label>
+			</div>
+
+		<div class="mb-3">
+			<label>
+				User
+				<InputSelect class="form-select" @bind-Value="User" DisplayName="User">
+					<option value="0">Empty</option>
+					@foreach (var item in _users) {
+						<option value="@item.Id">@item.Name</option>
+					}
+				</InputSelect>
+			</label>
+		</div>
+
+		<InputTextArea class="form-control" @bind-Value="Comment" style="height:40vh;" DisplayName="Comment" />
+	</FluentStack>
+</EditForm>
+
+<FluentStack>
+	<FluentButton OnClick="Save">Save</FluentButton>
+</FluentStack>
+
+@code {
+	private List<Contractor> _contractors = [];
+	private List<UserSelectListData> _users = [];
+	private string _userId = "";
+
+
+	[Parameter]
+	public int Id { get; set; }
+
+	public string Name { get; set; } = string.Empty;
+	public string Comment { get; set; } = string.Empty;
+	public int? Contractor { get; set; }
+	public string? User { get; set; }
+	public int? ActiveGoalId { get; set; }
+
+	protected override async Task OnInitializedAsync() {
+		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		_userId = UserManager.GetUserId(state.User) ?? "";
+
+
+		var uri = NavManager.ToAbsoluteUri("api/contractors").AbsoluteUri;
+		_contractors = await Http.GetFromJsonAsync<List<Contractor>>(uri) ?? new();
+
+		uri = NavManager.ToAbsoluteUri("api/users").AbsoluteUri;
+		_users = await Http.GetFromJsonAsync<List<UserSelectListData>>(uri) ?? new();
+	}
+
+	protected override async Task OnParametersSetAsync() {
+		if (Id == 0) return;
+		var url = NavManager.ToAbsoluteUri($"api/goals/templates/{Id}").AbsoluteUri;
+
+		var entity = await Http.GetFromJsonAsync<GoalMainData>(url);
+		if (entity is null) return;
+		Name = entity.Name;
+		Comment = entity.Comment;
+		Contractor = entity.Contractor?.Id;
+		User = entity.User?.Id;
+		StateHasChanged();
+	}
+
+	private async Task Save() {
+		if (Name is null) return;
+
+		object request;
+		string uri;
+
+		if(Id == 0) {
+			request = new GoalTemplateCreationData(_userId, Name, Comment, Contractor);
+
+			uri = "api/goals/templates/save";
+		}
+		else {
+			if (User is null) return;
+			int? contractorId = Contractor; 
+			request = new GoalTemplateHeaderDataChanges(User, Id, Name, Comment, contractorId);
+
+			uri = "api/goals/templates/save/header";
+		}
+
+		var url = NavManager.ToAbsoluteUri(uri).AbsoluteUri;
+
+		var response = await Http.PostAsJsonAsync(url, request);
+
+		if (response.IsSuccessStatusCode) NavManager.NavigateTo("/Admin/Goals/Templates");
+	}
+}

@@ -1,4 +1,5 @@
-﻿@page "/Admin/ActiveGoals"
+﻿@page "/Admin/Goals/Templates"
+
 
 @inject ApplicationDbContext DbContext
 @inject NavigationManager NavManager
@@ -6,55 +7,50 @@
 
 <FluentGrid Justify="JustifyContent.SpaceBetween">
 	<FluentGridItem Style="min-width: 200px;">
-		<FluentLabel Typo="Typography.PageTitle">Active Goals</FluentLabel>
+		<FluentLabel Typo="Typography.PageTitle">Goals</FluentLabel>
 	</FluentGridItem>
 	<FluentGridItem Justify="JustifyContent.FlexEnd" Gap="10px">
-		<FluentAnchor Appearance="Appearance.Accent" Href="/Admin/ActiveGoals/0">New</FluentAnchor>
+		<FluentAnchor Appearance="Appearance.Accent" Href="/Admin/Goals/0">New</FluentAnchor>
 	</FluentGridItem>
 </FluentGrid>
 
-<FluentDataGrid TGridItem="ActiveGoalListView" Items="@Query" GridTemplateColumns=".5fr 2fr 1fr 1fr .5fr .6fr">
-	<PropertyColumn Property="@(p => p.Id)" Title="№" />
+<FluentDataGrid TGridItem="GoalListView" Items="@Query"	GridTemplateColumns=".5fr 2fr 1fr 1fr .5fr .6fr">
+	<PropertyColumn Property="@(p => p.Id)" Title="№"/>
 	<PropertyColumn Property="@(p => p.Name)" Sortable="true" />
-	<PropertyColumn Property="@(p => p.ContractorName)" Title="Contractor" Sortable="true" />
+	<PropertyColumn Property="@(p => p.ContractorName)" Title="Contractor" Sortable="true"/>
 	<PropertyColumn Property="@(p => p.UserName)" Title="User" Sortable="true" />
-	<TemplateColumn Title="Goal">
-		@if (context.GoalId > 0) {
-			<FluentButton IconEnd="@(new Icons.Regular.Size16.Link())" />
-		}
-	</TemplateColumn>
 	<TemplateColumn Title="Actions">
-		<FluentAnchor IconEnd="@(new Icons.Regular.Size16.Edit())" Href="@($"/Admin/ActiveGoals/{context.Id}")" />
 		<FluentButton IconEnd="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => DeleteGoal(context.Id, context.UserId))" />
 	</TemplateColumn>
 </FluentDataGrid>
 
 @code {
-	class ActiveGoalListView {
+	class GoalListView {
 		public int Id { get; set; }
 		public required string Name { get; set; }
+		public string Comment { get; set; } = string.Empty;
 		public string? ContractorName { get; set; }
 		public required string UserName { get; set; }
 		public required string UserId { get; set; }
-		public int GoalId { get; set; }
 	}
 
-	IQueryable<ActiveGoalListView> Query => DbContext.ActiveGoals.Select(x => new ActiveGoalListView() {
+	IQueryable<GoalListView> Query => DbContext.Goals.Select(x => new GoalListView()
+		{
 			Id = x.Id,
 			Name = x.Name,
+			Comment = x.Comment,
 			ContractorName = x.Contractor != null ? x.Contractor.Name : "",
 			UserName = x.User!.UserName!,
-			UserId = x.User!.Id!,
-			GoalId = x.Goal != null ? x.Goal.Id : 0
+			UserId = x.User!.Id
 		});
 
 	private async Task DeleteGoal(int Id, string UserId) {
-		GoalDeleteData request = new(Id, UserId);
+		GoalDeleteData request = new(UserId, Id);
 
-		var url = NavManager.ToAbsoluteUri("api/goals/delete").AbsoluteUri;
+		var url = NavManager.ToAbsoluteUri("api/goals/templates/delete").AbsoluteUri;
 
 		var response = await Http.PostAsJsonAsync(url, request);
-
+		
 		NavManager.Refresh(true);
 	}
 

@@ -5,7 +5,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IBlazorContextMenuService blazorContextMenuService
 
-<ContextMenu Id="GoalContextMenu" AutoHide>
+<ContextMenu Id="GoalTemplateContextMenu" AutoHide>
 	<Item OnClick="EditGoal"><i class="bi bi-pencil"></i> @Loc.BtnEdit</Item>
 	<Item OnClick="DeleteGoal"><i class="bi bi-trash3"></i> @Loc.BtnDelete</Item>
 </ContextMenu>
@@ -23,15 +23,15 @@
 	}
 
 	private async Task EditGoal(ItemClickEventArgs e) {
-		if (e.Data is not GoalVM item) return;
+		if (e.Data is not GoalTemplateVM item) return;
 		if (!OnEdit.HasDelegate) return;
-		await blazorContextMenuService.HideMenu("GoalContextMenu");
+		await blazorContextMenuService.HideMenu("GoalTemplateContextMenu");
 		await OnEdit.InvokeAsync(item.Id);
 	}
 
 	private async Task DeleteGoal(ItemClickEventArgs e) {
-		if (e.Data is not GoalVM item) return;
-		GoalDeleteData request = new(item.Id, _userId);
+		if (e.Data is not GoalTemplateVM item) return;
+		GoalDeleteData request = new(_userId, item.Id);
 
 		var url = NavManager.ToAbsoluteUri("api/goals/delete").AbsoluteUri;
 
