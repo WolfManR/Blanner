@@ -33,7 +33,7 @@
 		if (e.Data is not GoalTemplateVM item) return;
 		GoalDeleteData request = new(_userId, item.Id);
 
-		var url = NavManager.ToAbsoluteUri("api/goals/delete").AbsoluteUri;
+		var url = NavManager.ToAbsoluteUri("api/goals/templates/delete").AbsoluteUri;
 
 		var response = await Http.PostAsJsonAsync(url, request);
 	}
