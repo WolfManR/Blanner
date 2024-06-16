@@ -30,8 +30,24 @@
 					}
 				</InputSelect>
 			</label>
-		</div>
 
+			<FluentButton IconStart="@(new Icons.Regular.Size32.AddSquare())" @onclick="AddContractor"></FluentButton>
+		</div>
+		@if (SelectedContractors.Count > 0) {
+
+			<div style="width:95%">
+
+				<FluentHorizontalScroll Speed="600" Easing=ScrollEasing.EaseInOut>
+					@foreach (var selectedContractor in SelectedContractors) {
+						<FluentCard MinimalStyle="true" Class="p-2 d-flex flex-row flex-nowrap align-items-center justify-content-between">
+							<div>@selectedContractor.Name</div>
+							<FluentButton Class="ms-2" IconStart="@(new Icons.Regular.Size20.Dismiss())" OnClick="() => SelectedContractors.Remove(selectedContractor)"></FluentButton>
+						</FluentCard>
+					}
+				</FluentHorizontalScroll>
+
+			</div>
+		}
 		<InputTextArea class="form-control" @bind-Value="EditForm.Comment" style="height:40vh;" DisplayName="Comment" />
 	</FluentStack>
 </EditForm>
@@ -46,6 +62,10 @@
 	[CascadingParameter]
 	public ActiveGoalEditForm EditForm { get; set; } = new();
 
+	public HashSet<Contractor> SelectedContractors { get; set; } = [];
+
+	private IEnumerable<Contractor>? SelectedOptions;
+
 	protected override async Task OnInitializedAsync() {
 		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
 		_userId = UserManager.GetUserId(state.User) ?? "";
@@ -58,19 +78,31 @@
 		_users = await Http.GetFromJsonAsync<List<UserSelectListData>>(uri) ?? new();
 	}
 
+	private void AddContractor() {
+		if(EditForm.Contractor is null) return;
+		var selected = _contractors.Find(x => x.Id == EditForm.Contractor);
+		if (selected is null) return;
+		SelectedContractors.Add(selected);
+	}
+
 	private async Task Save() {
 		if (EditForm?.Name is null) return;
-
-		GoalCreationData request = new(EditForm.Name, _userId, EditForm.Comment, EditForm.Contractor);
 
 		string uri = "api/goals/active/create";
 
 		var url = NavManager.ToAbsoluteUri(uri).AbsoluteUri;
 
-		var response = await Http.PostAsJsonAsync(url, request);
+		List<GoalCreationData> data = [];
+		if (SelectedContractors.Count > 0) data.AddRange(SelectedContractors.Select(x => new GoalCreationData(_userId, EditForm.Name, EditForm.Comment, x.Id)));
+		else data.Add(new(_userId, EditForm.Name, EditForm.Comment, EditForm.Contractor));
+
+		await Parallel.ForEachAsync(data, async (request, token) => {
+			var response = await Http.PostAsJsonAsync(url, request);
+		});
 	}
 
 	private void Clear() {
 		EditForm.Init();
+		SelectedContractors.Clear();
 	}
 }
