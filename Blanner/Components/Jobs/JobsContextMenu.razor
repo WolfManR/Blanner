@@ -1,0 +1,47 @@
+﻿@inject ILocalization Loc
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject UserManager<User> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IBlazorContextMenuService blazorContextMenuService
+
+<ContextMenu Id="JobContextMenu" AutoHide>
+	<Item OnClick="CreateGoal"><i class="bi bi-database-fill-add"></i> @Loc.BtnCreateGoal</Item>
+	<Item OnClick="CreateGoalTemplate"><i class="bi bi-database-fill-add"></i> @Loc.BtnCreateGoalTemplate</Item>
+</ContextMenu>
+
+@code {
+	private string _userId = "";
+
+	protected override async Task OnInitializedAsync()
+	{
+		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		_userId = UserManager.GetUserId(state.User) ?? "";
+	}
+
+	private async Task CreateGoal(ItemClickEventArgs e) {
+		if (e.Data is not JobHeaderData item) return;
+		
+		await blazorContextMenuService.HideMenu("JobContextMenu");
+
+		GoalCreationData request = new(_userId, item.Name, item.Comment, item.Contractor?.Id);
+
+		string uri = "api/goals/active/create";
+
+		var url = NavManager.ToAbsoluteUri(uri).AbsoluteUri;
+
+		var response = await Http.PostAsJsonAsync(url, request);
+	}
+
+	private async Task CreateGoalTemplate(ItemClickEventArgs e) {
+		if (e.Data is not JobHeaderData item) return;
+
+		await blazorContextMenuService.HideMenu("JobContextMenu");
+
+		GoalCreationData request = new(_userId, item.Name, item.Comment, item.Contractor?.Id);
+
+		var url = NavManager.ToAbsoluteUri("api/goals/templates/save").AbsoluteUri;
+
+		var response = await Http.PostAsJsonAsync(url, request);
+	}
+}
