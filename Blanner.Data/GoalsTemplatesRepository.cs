@@ -16,12 +16,16 @@ public class GoalsTemplatesRepository(ApplicationDbContext dbContext) {
 		return _dbContext.GoalsTemplates.AsNoTracking().Include(x => x.User).Include(x => x.Contractor).FirstAsync(x => x.Id == templateId);
 	}
 
-	public async ValueTask<GoalTemplate?> Save(string userId, string name) {
+	public async ValueTask<GoalTemplate?> Save(string userId, string name, string comment, int? contractorId) {
 		User? user = await _dbContext.Users.FindAsync(userId);
 		if (user is null) return null;
-	
-		GoalTemplate template = new(name, user);
-	
+
+		GoalTemplate template = new(name, user)
+		{
+			Comment = comment,
+			ContractorId = contractorId
+		};
+
 		_dbContext.GoalsTemplates.Add(template);
 		await _dbContext.SaveChangesAsync();
 	

@@ -62,7 +62,7 @@ public static class GoalsTemplatesEndpointsBehaviors {
 		[FromServices] GoalsTemplatesRepository repository,
 		[FromServices] IHubContext<GoalsHub, IGoalsClient> hubContext) 
 	{
-		GoalTemplate? template = await repository.Save(request.UserId, request.Name);
+		GoalTemplate? template = await repository.Save(request.UserId, request.Name, request.Comment, request.ContractorId);
 		if (template is null) return TypedResults.BadRequest();
 		await hubContext.Clients.All.GoalTemplateCreated(request.UserId, template.Id, new GoalMainData(template));
 		return TypedResults.Ok();
