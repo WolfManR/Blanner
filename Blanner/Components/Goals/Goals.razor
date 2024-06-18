@@ -228,8 +228,12 @@
 			}
 		}
 		else if(timerData is not null) {
+			var url = NavManager.ToAbsoluteUri($"api/goals/active/list/{goalId}").AbsoluteUri;
+			var response = await Http.GetFromJsonAsync<ActiveGoalListData>(url);
+			goal.TotalElapsedTime = response!.TotalElapsedTime;
 			goal.ActiveTimerId = timerData.Id;
 			goal.ActivationTime = timerData.Start;
+			goal.Tick = true;
 		}
 
 		await InvokeAsync(StateHasChanged);
