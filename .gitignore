@@ -456,3 +456,4 @@ $RECYCLE.BIN/
 /Blanner/Blanner/Blanner.db-shm
 /Blanner/Blanner/Blanner.db-wal
 /Blanner/appsettings.Production.json
+/Blanner/appsettings.Development.json
