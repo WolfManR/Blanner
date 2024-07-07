@@ -11,11 +11,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blanner", "Blanner\Blanner.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbInitializer", "DbInitializer\DbInitializer.csproj", "{E8AAE250-91BA-4B40-9673-08632B65016D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Blanner.Api", "Blanner.Api\Blanner.Api.csproj", "{A168A082-C89F-4CD6-93A6-197D2A64CB12}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blanner.Api", "Blanner.Api\Blanner.Api.csproj", "{A168A082-C89F-4CD6-93A6-197D2A64CB12}"
 EndProject
 Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "Blanner.DesktopWinUI (Package)", "Blanner.DesktopWinUI\Blanner.DesktopWinUI (Package)\Blanner.DesktopWinUI (Package).wapproj", "{D9F3F3DD-5720-4D0C-8704-AED4037B3F67}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Blanner.DesktopWinUI", "Blanner.DesktopWinUI\Blanner.DesktopWinUI\Blanner.DesktopWinUI.csproj", "{2CBC2D40-95D0-4859-8B3F-F0BB566E1915}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blanner.DesktopWinUI", "Blanner.DesktopWinUI\Blanner.DesktopWinUI\Blanner.DesktopWinUI.csproj", "{2CBC2D40-95D0-4859-8B3F-F0BB566E1915}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DesktopWinUI", "DesktopWinUI", "{A2E5146E-3B48-4A7A-9861-B829457DBEF0}"
 EndProject

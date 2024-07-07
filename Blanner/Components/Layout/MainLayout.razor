@@ -1,23 +1,58 @@
 ﻿@inherits LayoutComponentBase
+
 @inject ILocalization Loc
+@inject IDialogService DialogService
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<FluentLayout>
+	<FluentHeader>
+		<FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+			<div class="nav-item px-3">
+				<NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+					<FluentLabel Typo="Typography.PaneHeader" Weight="FontWeight.Bold">@Loc.NavMenuAppName</FluentLabel>
+				</NavLink>
+			</div>
 
-    <main>
-        <div class="top-row px-4">
-            <AuthMenu/>
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">@Loc.BtnAbout</a>
+		</FluentStack>
+		<FluentSpacer />
+		<AuthMenu />
+
+		<FluentButton BackgroundColor="var(--neutral-layer-4)" OnClick="OpenSiteSettingsAsync" Title="Site settings">
+			<FluentIcon Value="@(new Icons.Regular.Size20.Settings())" Color="Color.Neutral" Title="Site settings" />
+		</FluentButton>
+	</FluentHeader>
+
+	<FluentBodyContent>
+		<FluentStack Orientation="Orientation.Horizontal" Width="100%" Style="height: calc(100dvh - 90px);">
+			<FluentNavMenu Width="250" Collapsible>
+				<AuthorizeView>
+					<Authorized>
+						<FluentNavLink Icon="@(new Icons.Regular.Size24.TaskListLtr())" Href="goals-dashboard" Match="NavLinkMatch.All">@Loc.NavMenuGoals</FluentNavLink>
+						<FluentNavLink Icon="@(new Icons.Regular.Size24.PersonBoard())" Href="contractors" Match="NavLinkMatch.All">@Loc.NavMenuContractors</FluentNavLink>
+						<FluentNavLink Icon="@(new Icons.Regular.Size24.CalendarWorkWeek())" Href="jobs" Match="NavLinkMatch.All">@Loc.NavMenuJobs</FluentNavLink>
+						<FluentNavLink Icon="@(new Icons.Regular.Size24.Whiteboard())" Href="sticky" Match="NavLinkMatch.All">@Loc.NavMenuSticky</FluentNavLink>
+					</Authorized>
+
+					<NotAuthorized>
+					</NotAuthorized>
+				</AuthorizeView>
+			</FluentNavMenu>
+
+			<div class="main-content" style="width: 100%; height: 90dvh">
+				@Body
+			</div>
+		</FluentStack>
+	</FluentBodyContent>
+
+    <FluentFooter Class="px-2" Style="@("height: 40px; color: white;  font-size: var(--type-ramp-minus-1-font-size); line-height: var(--type-ramp-base-line-height);")">
+        <div class="version">
+            Version: 0.0.15 &nbsp;-&nbsp; Powered by Thundire
         </div>
-
-        <article class="content px-4" style="height:calc(100% - 4rem)">
-            @Body
-        </article>
-       
-    </main>
-</div>
+        <FluentSpacer />
+        <div class="copy">
+            Thundire © 2024. All rights reserved.
+        </div>
+    </FluentFooter>
+</FluentLayout>
 
 <div id="blazor-error-ui">
     @Loc.MessageUnhadledErrorOccured
@@ -29,3 +64,24 @@
 <FluentMessageBarProvider />
 <FluentToastProvider />
 <FluentTooltipProvider />
+
+@code{
+	public DesignThemeModes Mode { get; set; }
+
+	public OfficeColor? OfficeColor { get; set; }
+
+	private IDialogReference? _dialog;
+
+    private async Task OpenSiteSettingsAsync() {
+        _dialog = await DialogService.ShowPanelAsync<SiteSettingsPanel>(new DialogParameters() {
+                ShowTitle = true,
+                Title = "Site settings",
+                Alignment = HorizontalAlignment.Right,
+                PrimaryAction = "OK",
+                SecondaryAction = null,
+                ShowDismiss = true
+            });
+
+        DialogResult result = await _dialog.Result;
+	}
+}

@@ -1,69 +1,86 @@
 ﻿@implements IDisposable
 
 @inject NavigationManager NavigationManager
-@inject ILocalizationManager LocalizationManager
 @inject ILocalization Loc
+@inject UserInfo UserInfo
+@inject SignInManager<User> SignInManager
 
-<div>
-	<nav class="d-flex flex-row">
-		<FluentSelect Appearance="Appearance.Stealth"
-					  TOption="string"
-					  Items="@LocalizationManager.Localizations"
-					  @bind-Value="@LocalizationManager.CurrentLocalization">
-		</FluentSelect>
 
-		<AuthorizeView>
-			<Authorized>
-				<div class="nav-item px-1">
-					<NavLink class="nav-link" href="Admin/Manage">
-						<span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @Loc.AuthMenuAdminDashboard
-					</NavLink>
-				</div>
-				<div class="nav-item px-3">
-					<NavLink class="nav-link" href="Account/Manage">
-						<span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
-					</NavLink>
-				</div>
-				<div class="nav-item px-3">
-					<form action="Account/Logout" method="post">
-						<AntiforgeryToken />
-						<input type="hidden" name="ReturnUrl" value="@currentUrl" />
-						<button type="submit" class="nav-link">
-							<span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> @Loc.AuthMenuBtnLogout
-						</button>
-					</form>
-				</div>
-			</Authorized>
-			<NotAuthorized>
-				<div class="nav-item px-3">
-					<NavLink class="nav-link" href="Account/Register">
-						<span class="bi bi-person-nav-menu" aria-hidden="true"></span> @Loc.AuthMenuBtnRegister
-					</NavLink>
-				</div>
-				<div class="nav-item px-3">
-					<NavLink class="nav-link" href="Account/Login">
-						<span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> @Loc.AuthMenuBtnLogin
-					</NavLink>
-				</div>
-			</NotAuthorized>
-		</AuthorizeView>
-	</nav>
-</div>
+<FluentStack HorizontalAlignment="@HorizontalAlignment.End"
+			 VerticalAlignment="@VerticalAlignment.Center"
+			 HorizontalGap="12"
+			 Style="height: 48px; padding-inline-end: 10px; ">
+
+	<AuthorizeView>
+		<Authorized>
+			<form>
+				<input type="hidden" name="ReturnUrl" value="@LogoutForm.ReturnUrl" />
+				<FluentButton Type="ButtonType.Submit" Action="Account/Logout" Method="post">@Loc.AuthMenuBtnLogout</FluentButton>
+				<AntiforgeryToken />
+			</form>
+			<FluentProfileMenu Initials="@(string.Empty + UserEmail.ToUpper()[0])"
+							   TopCorner
+							   ButtonSize="42px"
+							   Style="--fluent-profile-menu-hover: var(--neutral-stroke-focus); padding: 4px;">
+				<HeaderTemplate>
+					<FluentStack Orientation="Orientation.Horizontal">
+
+						<FluentLabel Typo="@Typography.Header">@UserEmail</FluentLabel>
+						<FluentSpacer />
+					</FluentStack>
+				</HeaderTemplate>
+				<ChildContent>
+					<div style="width: 250px; height: 80px">
+						<FluentAnchor Href="Account/Manage">Manage</FluentAnchor>
+					</div>
+				</ChildContent>
+				<FooterTemplate>
+					<FluentStack>
+
+						<FluentSpacer />
+						<FluentAnchor Appearance="@Appearance.Hypertext"
+									  Href="https://microsoft.com"
+									  Target="_blank">About</FluentAnchor>
+					</FluentStack>
+				</FooterTemplate>
+			</FluentProfileMenu>
+
+		</Authorized>
+
+		<NotAuthorized>
+			<FluentAnchor Href="Account/Register">@Loc.AuthMenuBtnRegister</FluentAnchor>
+			<FluentAnchor Href="Account/Login">@Loc.AuthMenuBtnLogin</FluentAnchor>
+		</NotAuthorized>
+	</AuthorizeView>
+</FluentStack>
 
 @code {
-	private string? currentUrl;
+	[SupplyParameterFromForm]
+	private LogoutFormModel LogoutForm { get; set; } = new();
+
+	private string UserEmail { get; set; } = string.Empty;
 
 	protected override void OnInitialized() {
-		currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+		LogoutForm = new();
+		LogoutForm.ReturnUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
 		NavigationManager.LocationChanged += OnLocationChanged;
 	}
 
+	protected override async Task OnInitializedAsync() {
+
+		UserEmail = await UserInfo.Email();
+	}
+
 	private void OnLocationChanged(object? sender, LocationChangedEventArgs e) {
-		currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+		LogoutForm.ReturnUrl = NavigationManager.ToBaseRelativePath(e.Location);
 		StateHasChanged();
 	}
 
 	public void Dispose() {
 		NavigationManager.LocationChanged -= OnLocationChanged;
+	}
+
+	private class LogoutFormModel {
+		public string? ReturnUrl { get; set; }
 	}
 }
