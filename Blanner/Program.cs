@@ -7,6 +7,7 @@ using Blanner.Extensions;
 using Blanner.Hubs;
 using Blanner.Hubs.Clients;
 using Blanner.Localizations;
+using Blanner.Models;
 using Blanner.Services;
 
 using Coravel;
@@ -110,6 +111,7 @@ internal static class HostExtensions {
 		services.AddScoped<IdentityUserAccessor>();
 		services.AddScoped<IdentityRedirectManager>();
 		services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+		services.AddScoped<UserInfo>();
 
 		services
 			.AddAuthentication(options =>
