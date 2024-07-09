@@ -45,10 +45,10 @@
 		<table class="table table-bordered">
 			<thead>
 				<tr>
-					<th>@Loc.IdLabel</th>
-					<th>@Loc.FromTimeLabel</th>
-					<th>@Loc.ToTimeLabel</th>
-					<th>@Loc.TimeLabel</th>
+					<th><FluentLabel>@Loc.IdLabel</FluentLabel></th>
+					<th><FluentLabel>@Loc.FromTimeLabel</FluentLabel></th>
+					<th><FluentLabel>@Loc.ToTimeLabel</FluentLabel></th>
+					<th><FluentLabel>@Loc.TimeLabel</FluentLabel></th>
 					<th>
 						<div>
 							<button class="btn-lg" @onclick="AddTimeActiveGoal"><i class="bi bi-plus-square-fill"></i></button>
@@ -60,10 +60,10 @@
 			<tbody>
 				@foreach (var item in GoalEditForm.GoalTime) {
 					<tr>
-						<td>@item.Id</td>
-						<td>@item.Start.ToString("t")</td>
-						<td>@item.End.ToString("t")</td>
-						<td>@item.Time().ToString(UserSettings.DetailedTimeFormatterValue())</td>
+                        <td><FluentLabel>@item.Id</FluentLabel></td>
+						<td><FluentLabel>@item.Start.ToString("t")</FluentLabel></td>
+						<td><FluentLabel>@item.End.ToString("t")</FluentLabel></td>
+						<td><FluentLabel>@item.Time().ToString(UserSettings.DetailedTimeFormatterValue())</FluentLabel></td>
 						<td>
 							@if (item.Id != GoalEditForm.ActiveTimerId) {
 								<div>

@@ -34,7 +34,7 @@
 				
 				<ContextMenuTrigger MenuId="GoalContractorGroupContextMenu" Data="@group.Key">
 					<div class="row goals-table-item item-header align-items-baseline">
-						<div class="col-10 fw-bold">@(keyValue?.Name ?? Loc.ContractorNoneName)</div>
+						<FluentLabel Class="col-10 fw-bold">@(keyValue?.Name ?? Loc.ContractorNoneName)</FluentLabel>
 						<div class="col-2 d-flex justify-content-end">
 							<button class="btn btn-danger" @onclick="() => DeleteContractorGroup(group.Key)" disabled><i class="bi bi-trash3"></i></button>
 						</div>
@@ -45,7 +45,7 @@
 					@foreach (var item in group) {
 						<ContextMenuTrigger MenuId="GoalTemplateContextMenu" Data="@item">
 							<div class="row goals-table-item item align-items-baseline">
-								<div class="col-8 item-text">@item.Name</div>
+								<FluentLabel Class="col-8 item-text">@item.Name</FluentLabel>
 								<div class="col-4 d-flex justify-content-end align-bottom">
 									<div class="btn-toolbar" role="toolbar">
 										<div class="btn-group" role="group">

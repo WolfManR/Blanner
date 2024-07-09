@@ -22,24 +22,22 @@
 
 <div class="d-flex flex-wrap">
 	@foreach (var item in _contractors) {
-		<div class="card m-2">
-			<div class="card-header d-flex gap-2 align-items-baseline">
+		<FluentCard Class="m-2" MinimalStyle Width="fit-content" Height="fit-content">
+			<div class="d-flex gap-2 align-items-baseline">
 				@if (!item.IsOnEdit) {
-					<div @onclick="() => item.IsOnEdit = true">@item.Name</div>
+					<FluentLabel @onclick="() => item.IsOnEdit = true">@item.Name</FluentLabel>
 				}
 				@if (item.IsOnEdit) {
 					<div>
 						<EditForm FormName="ContractorEditForm" Model="item" OnValidSubmit="() => Save(item)">
-							<label>
-								@Loc.NameInputLabel
-								<InputText @bind-Value="item.Name" />
-							</label>
+							<FluentLabel>@Loc.NameInputLabel</FluentLabel>
+							<InputText @bind-Value="item.Name"/>
 						</EditForm>
 					</div>
 				}
 				<button class="btn btn-danger" @onclick="() => Delete(item)"><i class="bi bi-trash3"></i></button>
 			</div>
-		</div>
+		</FluentCard>
 	}
 </div>
 

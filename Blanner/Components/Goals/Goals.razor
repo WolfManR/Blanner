@@ -18,7 +18,7 @@
 
 				<ContextMenuTrigger MenuId="ActiveGoalContractorGroupContextMenu" Data="@group.Key">
 					<div class="row goals-table-item item-header align-items-baseline">
-						<div class="col-9 fw-bold">@(keyValue?.Name ?? Loc.ContractorNoneName)</div>
+						<FluentLabel Class="col-9 fw-bold">@(keyValue?.Name ?? Loc.ContractorNoneName)</FluentLabel>
 						<div class="col-3 d-flex justify-content-end">
 							<button class="btn btn-danger" @onclick="() => DeleteContractorGroup(group.Key)" disabled><i class="bi bi-trash3"></i></button>
 						</div>
@@ -31,9 +31,9 @@
 							<RowTemplate>
 								<ContextMenuTrigger MenuId="ActiveGoalsContextMenu" Data="@context">
 									<div class="row goals-table-item item align-items-baseline" @onclick="() => SelectGoal(context)">
-										<div class="col-2">@context.TotalElapsedTime.ToString(UserSettings.TimeFormatterValue())</div>
-										<div class="col-4">@context.Name</div>
-										<div class="col-3">@context.TimerTime.ToString(UserSettings.DetailedTimeFormatterValue())</div>
+										<FluentLabel Class="col-2">@context.TotalElapsedTime.ToString(UserSettings.TimeFormatterValue())</FluentLabel>
+										<FluentLabel Class="col-4">@context.Name</FluentLabel>
+										<FluentLabel Class="col-3">@context.TimerTime.ToString(UserSettings.DetailedTimeFormatterValue())</FluentLabel>
 										<div class="col-3 d-flex justify-content-end">
 											<div class="btn-group">
 												@* @if (context.GoalId is not null) {

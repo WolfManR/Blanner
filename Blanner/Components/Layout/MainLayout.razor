@@ -44,18 +44,18 @@
 	</FluentBodyContent>
 
     <FluentFooter Class="px-2" Style="@("height: 40px; color: white;  font-size: var(--type-ramp-minus-1-font-size); line-height: var(--type-ramp-base-line-height);")">
-        <div class="version">
+        <FluentLabel Class="version">
             Version: 0.0.15 &nbsp;-&nbsp; Powered by Thundire
-        </div>
+        </FluentLabel>
         <FluentSpacer />
-        <div class="copy">
+		<FluentLabel Class="copy">
             Thundire © 2024. All rights reserved.
-        </div>
+        </FluentLabel>
     </FluentFooter>
 </FluentLayout>
 
 <div id="blazor-error-ui">
-    @Loc.MessageUnhadledErrorOccured
+	<FluentLabel>@Loc.MessageUnhadledErrorOccured</FluentLabel>
     <a href="" class="reload">@Loc.BtnReload</a>
     <a class="dismiss">🗙</a>
 </div>

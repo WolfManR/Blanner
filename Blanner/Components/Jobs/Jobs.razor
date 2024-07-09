@@ -27,17 +27,18 @@
 		<Panel1>
 			<div class="mt-2 me-3" style="height: 88dvh; overflow-y: auto;">
 				@foreach (var group in JobHeaders.GroupBy(x => x.Date).OrderByDescending(x => x.Key)) {
-					<div class="card mb-3">
-						<div class="card-header">
+					<FluentCard Class="mb-3" MinimalStyle Height="fit-content">
+						<div>
 							<div class="row">
-								<span class="col-9 fw-bold">@group.Key.ToString("D")</span>
-								<span class="col-auto fw-bold">@group.Select(x => x.ElapsedTime).Aggregate((cum, t) => cum + t).ToString(UserSettings.TimeFormatterValue())</span>
+								<FluentLabel Class="col-9 fw-bold">@group.Key.ToString("D")</FluentLabel>
+								<FluentLabel Class="col-auto fw-bold">@group.Select(x => x.ElapsedTime).Aggregate((cum, t) => cum + t).ToString(UserSettings.TimeFormatterValue())</FluentLabel>
 							</div>
 						</div>
-						<div class="card-body">
+
+						<div>
 							@foreach (var contractorGroup in group.GroupBy(x => new Value<Contractor, int>(x.Contractor))) {
 								<div>
-									<h3 class="col-auto mb-2 mt-1">@(contractorGroup.Key.StoredValue?.Name ?? Loc.ContractorNoneName)</h3>
+									<FluentLabel Class="col-auto mb-2 mt-1" Typo="Typography.H3">@(contractorGroup.Key.StoredValue?.Name ?? Loc.ContractorNoneName)</FluentLabel>
 
 									@foreach (var item in contractorGroup) {
 										<ContextMenuTrigger MenuId="JobContextMenu" Data="@item">
@@ -51,9 +52,9 @@
 														}
 													</div>
 
-													<h4 class="col-7 mb-0">@item.Name</h4>
-													<span class="col-1">@item.ElapsedTime.ToString(UserSettings.TimeFormatterValue())</span>
-													<span class="col-md-auto"><span>@item.Start.ToString(UserSettings.DateTimeFormatterValue())</span> - <span>@item.End.ToString(UserSettings.DateTimeFormatterValue())</span></span>
+													<FluentLabel Class="col-7 mb-0" Typo="Typography.H4">@item.Name</FluentLabel>
+													<FluentLabel Class="col-1">@item.ElapsedTime.ToString(UserSettings.TimeFormatterValue())</FluentLabel>
+													<FluentLabel Class="col-md-auto"><span>@item.Start.ToString(UserSettings.DateTimeFormatterValue())</span> - <span>@item.End.ToString(UserSettings.DateTimeFormatterValue())</span></FluentLabel>
 												</div>
 											</div>
 										</ContextMenuTrigger>
@@ -61,7 +62,7 @@
 								</div>
 							}
 						</div>
-					</div>
+					</FluentCard>
 				}
 			</div>
 		</Panel1>
@@ -86,7 +87,7 @@
 							</Header>
 							<Content>
 								@if (Selected?.Comment is { Length: > 0 }) {
-									<div class="mt-2 bg-white p-2" style="height:75dvh;overflow-y:auto;">
+									<div class="mt-2 p-2" style="height:75dvh;overflow-y:auto;">
 										<p>@((MarkupString) @Selected.Comment.Replace("\n", "<br/>"))</p>
 									</div>
 								}
@@ -97,17 +98,17 @@
 								Changes @Selected?.Changes.Count
 							</Header>
 							<Content>
-								<div class="mt-2 bg-white p-2" style="height:75dvh;overflow-y:auto;">
+								<div class="mt-2 p-2" style="height:75dvh;overflow-y:auto;">
 									@if (Selected?.Changes is { Count: > 0 }) {
 										@foreach (var change in Selected.Changes) {
-											<div class="card mb-3">
-												<div class="card-header">
+											<FluentCard Class="mb-3">
+												<div>
 													<div class="row">
 														<div class="col-auto">
 															<FluentButton IconStart="@(change.Saved ? new Icons.Filled.Size24.Database() : new Icons.Regular.Size24.Database())" />
 														</div>
-														<span class="col-2">@change.ElapsedTime.ToString(UserSettings.TimeFormatterValue())</span>
-														<span class="col-md-auto"><span>@change.Start.ToString(UserSettings.DateTimeFormatterValue())</span> - <span>@change.End.ToString(UserSettings.DateTimeFormatterValue())</span></span>
+														<FluentLabel Class="col-2">@change.ElapsedTime.ToString(UserSettings.TimeFormatterValue())</FluentLabel>
+														<FluentLabel Class="col-md-auto"><span>@change.Start.ToString(UserSettings.DateTimeFormatterValue())</span> - <span>@change.End.ToString(UserSettings.DateTimeFormatterValue())</span></FluentLabel>
 														<div class="col-auto">
 														@if (change.Comment is { Length: > 0 }) {
 															<CopyToClipboard TextToCopy="@change.Comment" />
@@ -115,16 +116,16 @@
 														</div>
 													</div>
 												</div>
-												<div class="card-body">
+												<div>
 													<div>
 														@if (change.Comment is { Length: > 0 }) {
-															<div class="mt-2 bg-white p-2">
+															<div class="mt-2 p-2">
 																<p>@((MarkupString) @change.Comment.Replace("\n", "<br/>"))</p>
 															</div>
 														}
 													</div>
 												</div>
-											</div>
+											</FluentCard>
 										}
 									}
 								</div>
