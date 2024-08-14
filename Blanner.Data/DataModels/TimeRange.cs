@@ -1,5 +1,5 @@
-﻿namespace Blanner.Components.Shared.Models;
-public class TimeRange {
+﻿namespace Blanner.Data.DataModels;
+public class TimeRange : ITime {
 	public DateTimeOffset Start { get; set; }
 	public DateTimeOffset End { get; set; }
 }

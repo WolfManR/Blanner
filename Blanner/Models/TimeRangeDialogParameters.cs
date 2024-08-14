@@ -1,6 +1,4 @@
-﻿using Blanner.Components.Shared.Models;
-
-using Microsoft.AspNetCore.Components;
+﻿using Blanner.Data.DataModels;
 
 namespace Blanner.Models;
 
