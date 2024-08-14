@@ -1,5 +1,6 @@
 using Blanner.Data.Models;
 using Blanner.Data.Models.TimeRanges;
+using Blanner.Data.Models.WorksManagement;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;

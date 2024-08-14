@@ -1,8 +1,8 @@
 ﻿using Blanner.Data.Models;
-
+using Blanner.Data.Models.WorksManagement;
 using Microsoft.EntityFrameworkCore;
 
-namespace Blanner.Data; 
+namespace Blanner.Data;
 public class GoalsTemplatesRepository(ApplicationDbContext dbContext) {
 	private readonly ApplicationDbContext _dbContext = dbContext;
 

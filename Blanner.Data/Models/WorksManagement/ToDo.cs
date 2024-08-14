@@ -1,5 +1,6 @@
-﻿namespace Blanner.Data.Models;
-public class ToDo {
+﻿namespace Blanner.Data.Models.WorksManagement;
+public class ToDo
+{
     public long Id { get; set; }
     public bool Done { get; set; }
     public string? Name { get; set; }
