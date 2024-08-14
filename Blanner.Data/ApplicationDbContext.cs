@@ -1,10 +1,10 @@
 using Blanner.Data.Models;
-
+using Blanner.Data.Models.TimeRanges;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace Blanner.Data; 
+namespace Blanner.Data;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<User>(options)
 {
     public virtual DbSet<GoalTemplate> GoalsTemplates { get; set; } = null!;

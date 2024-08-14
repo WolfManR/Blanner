@@ -1,5 +1,5 @@
 ﻿using Blanner.Data.Models;
-
+using Blanner.Data.Models.TimeRanges;
 using Microsoft.EntityFrameworkCore;
 
 namespace Blanner.Data;

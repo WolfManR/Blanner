@@ -1,6 +1,6 @@
 ﻿using Blanner.Data.DataModels;
 using Blanner.Data.Models;
-
+using Blanner.Data.Models.TimeRanges;
 using System.Text.Json.Serialization;
 
 namespace Blanner.Data;

@@ -1,9 +1,9 @@
 ﻿using Blanner.Data.DataModels;
 using Blanner.Data.Models;
-
+using Blanner.Data.Models.TimeRanges;
 using Microsoft.EntityFrameworkCore;
 
-namespace Blanner.Data; 
+namespace Blanner.Data;
 public class GoalsRepository(ApplicationDbContext dbContext) {
 	private readonly ApplicationDbContext _dbContext = dbContext;
 

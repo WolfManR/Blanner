@@ -1,5 +1,5 @@
 ﻿using Blanner.Data;
-using Blanner.Data.Models;
+using Blanner.Data.Models.TimeRanges;
 using Blanner.Hubs;
 
 using Microsoft.AspNetCore.Mvc;
