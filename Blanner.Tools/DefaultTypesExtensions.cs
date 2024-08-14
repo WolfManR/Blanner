@@ -1,14 +1,16 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace Blanner.Extensions;
+namespace System;
 
 public static class DefaultTypesExtensions {
 	public static bool NullOrEmpty([NotNullWhen(false)]this string? value) => string.IsNullOrEmpty(value);
-	public static void Change<T>(this IEnumerable<T> collection, Action<T> changeBehavior) {
-        foreach (var item in collection)
-        {
-            changeBehavior.Invoke(item);
-        }
+
+	public static string Cut(this string value, int length) => Cut(value, 0, length);
+
+	public static string Cut(this string value, int startIndex, int length) {
+		if (value.Length < startIndex) return string.Empty;
+		if(value.Length < startIndex + length) length = value.Length;
+		return value.Substring(startIndex, length);
 	}
 
 	/// <summary>

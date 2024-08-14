@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Reflection;
 
-namespace Blanner.Extensions;
+namespace System;
 
 public static class EnumExtensions {
 
