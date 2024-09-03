@@ -5,6 +5,8 @@ namespace System;
 public static class DefaultTypesExtensions {
 	public static bool NullOrEmpty([NotNullWhen(false)]this string? value) => string.IsNullOrEmpty(value);
 
+	public static U? NotNullCoalesce<T, U>(this T? self, Func<T, U> valueHandler) => self is not null ? valueHandler.Invoke(self) : default;
+
 	public static string Cut(this string value, int length) => Cut(value, 0, length);
 
 	public static string Cut(this string value, int startIndex, int length) {
