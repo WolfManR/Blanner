@@ -3,8 +3,8 @@
 public sealed record ContractorCreateRequest(string Name, DateTimeOffset CreatedAt);
 public sealed record ContractorEditRequest(int Id, string Name, DateTimeOffset UpdatedAt);
 
-public sealed record GoalTemplateCreationData(string UserId, string Name, string Comment, int? ContractorId);
-public sealed record GoalTemplateHeaderDataChanges(string UserId, int Id, string Name, string Comment, int? ContractorId);
+public sealed record GoalTemplateCreationData(string UserId, string Name, string Comment, int[] ContractorsId);
+public sealed record GoalTemplateHeaderDataChanges(string UserId, int Id, string Name, string Comment, int[] ContractorsId);
 public sealed record GoalTemplateActivationData(string UserId, int TemplateId, DateTimeOffset ActivationDate, bool StartTimerImediate = false);
 
 public sealed record GoalCreationData(string UserId, string Name, string Comment, int? ContractorId);

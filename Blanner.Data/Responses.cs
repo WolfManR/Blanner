@@ -10,19 +10,46 @@ public class GoalMainData {
 	[JsonConstructor]
 	public GoalMainData() { }
 
-	public GoalMainData(GoalTemplate data) {
-		Id = data.Id;
-		Name = data.Name;
-		Comment = data.Comment;
-		Contractor = data.Contractor;
-		User = data.User is not null ? new(data.User) : null;
-	}
-
 	public int Id { get; set; }
 	public string Name { get; set; } = string.Empty;
 	public string Comment { get; set; } = string.Empty;
-	public Contractor? Contractor { get; set; }
 	public UserInfoData? User { get; set; }
+}
+
+
+public class GoalTemplateListData : GoalMainData {
+	[JsonConstructor]
+	public GoalTemplateListData() { }
+
+	public GoalTemplateListData(GoalTemplate data) {
+		Id = data.Id;
+		Name = data.Name;
+		Comment = data.Comment;
+		User = data.User is not null ? new(data.User) : null;
+
+		HashSet<Contractor> contractors = [.. data.Contractors];
+		if (data.Contractor is not null) contractors.Add(data.Contractor);
+		Contractors = [.. contractors];
+	}
+
+	public List<Contractor> Contractors { get; set; } = [];
+}
+
+
+public class GoalTemplateDetailsData : GoalMainData {
+	[JsonConstructor]
+	public GoalTemplateDetailsData() { }
+
+	public GoalTemplateDetailsData(GoalTemplate data) {
+		Id = data.Id;
+		Name = data.Name;
+		Comment = data.Comment;
+		User = data.User is null ? null : new(data.User);
+
+		Contractors = data.Contractors;
+	}
+
+	public List<Contractor> Contractors { get; set; } = [];
 }
 
 public class ActiveGoalListData : GoalMainData {
@@ -47,6 +74,7 @@ public class ActiveGoalListData : GoalMainData {
 	public DateTimeOffset ActivationTime { get; set; }
 	public int? ActiveTimeId { get; set; }
 	public List<ToDo> Tasks { get; set; } = [];
+	public Contractor? Contractor { get; set; }
 }
 public class ActiveGoalDetailsData : GoalMainData {
 	[JsonConstructor]
@@ -69,6 +97,7 @@ public class ActiveGoalDetailsData : GoalMainData {
 	public int? ActiveTimeId { get; set; }
 
 	public List<ToDo> Tasks { get; set; } = [];
+	public Contractor? Contractor { get; set; }
 }
 
 

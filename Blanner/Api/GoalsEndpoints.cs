@@ -46,7 +46,7 @@ public static class GoalsTemplatesEndpointsBehaviors {
 		[FromQuery] string userId,
 		[FromServices] GoalsTemplatesRepository repository)
 	{
-		var data = (await repository.Templates(userId).ToListAsync()).Select(x => new GoalMainData(x)).ToList();
+		var data = (await repository.Templates(userId).ToListAsync()).Select(x => new GoalTemplateListData(x)).ToList();
 		return TypedResults.Json(data);
 	}
 
@@ -55,17 +55,17 @@ public static class GoalsTemplatesEndpointsBehaviors {
 		[FromServices] GoalsTemplatesRepository repository)
 	{
 		var template = await repository.Template(goalId);
-		return template is null ? TypedResults.NotFound() : TypedResults.Json(new GoalMainData(template));
+		return template is null ? TypedResults.NotFound() : TypedResults.Json(new GoalTemplateDetailsData(template));
 	}
 
 	public static async Task<IResult> CreateGoal(
-		[FromBody] GoalCreationData request,
+		[FromBody] GoalTemplateCreationData request,
 		[FromServices] GoalsTemplatesRepository repository,
 		[FromServices] IHubContext<GoalsHub, IGoalsClient> hubContext) 
 	{
-		GoalTemplate? template = await repository.Save(request.UserId, request.Name, request.Comment, request.ContractorId);
+		GoalTemplate? template = await repository.Save(request.UserId, request.Name, request.Comment, request.ContractorsId);
 		if (template is null) return TypedResults.BadRequest();
-		await hubContext.Clients.All.GoalTemplateCreated(request.UserId, template.Id, new GoalMainData(template));
+		await hubContext.Clients.All.GoalTemplateCreated(new GoalTemplateCreationEventArgs(template.Id, template.Name, template.Comment, template.User.NotNullCoalesce(x => new UserInfoData(x))));
 		return TypedResults.Ok();
 	}
 	
@@ -74,8 +74,8 @@ public static class GoalsTemplatesEndpointsBehaviors {
 		[FromServices] GoalsTemplatesRepository repository,
 		[FromServices] IHubContext<GoalsHub, IGoalsClient> hubContext)
 	{
-		GoalTemplate template = await repository.Update(request.Id, request.Name, request.Comment, request.ContractorId);
-		GoalTemplateHeaderData data = new(template.Name, template.Comment, template.Contractor);
+		GoalTemplate template = await repository.Update(request.Id, request.Name, request.Comment, request.ContractorsId);
+		GoalTemplateHeaderData data = new(template.Name, template.Comment, template.User.NotNullCoalesce(x => new UserInfoData(x)), template.Contractors);
 		await hubContext.Clients.All.GoalTemplateHeaderEdited(request.UserId, request.Id, data);
 		return TypedResults.Ok();
 	}
@@ -146,9 +146,9 @@ public static class GoalsEndpointsBehaviors {
 		[FromServices] GoalsRepository repository,
 		[FromServices] IHubContext<GoalsHub, IGoalsClient> hubContext)
 	{
-		GoalTemplate? goal = await repository.SaveAsTemplate(request);
-		if (goal is null) return TypedResults.BadRequest();
-		await hubContext.Clients.All.GoalTemplateCreated(request.UserId, goal.Id, new(goal));
+		GoalTemplate? template = await repository.SaveAsTemplate(request);
+		if (template is null) return TypedResults.BadRequest();
+		await hubContext.Clients.All.GoalTemplateCreated(new GoalTemplateCreationEventArgs(template.Id, template.Name, template.Comment, template.User.NotNullCoalesce(x => new UserInfoData(x))));
 		return TypedResults.Ok();
 	}
 

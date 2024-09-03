@@ -29,7 +29,8 @@
 	<div class="goals-table mt-2">
 		
 		<div class="goals-table-body" style="height: @(DataHeight); overflow-y: auto;">
-			@foreach (var group in _goals.GroupBy(x => new Value<Contractor, int>(x.Contractor)).OrderBy(x => x.Key.ToString())) {
+			<div>
+			@foreach (var group in _goals.Where(x=> x.Contractors.Count <= 1).GroupBy(x => new Value<Contractor, int>(x.Contractors.FirstOrDefault())).OrderBy(x => x.Key.ToString())) {
 				Contractor? keyValue = group.Key;
 				
 				<ContextMenuTrigger MenuId="GoalContractorGroupContextMenu" Data="@group.Key">
@@ -59,6 +60,25 @@
 					}
 				}
 			}
+			</div>
+			<hr />
+			<div>
+				@foreach (var item in _goals.Where(x => x.Contractors.Count > 1).OrderBy(x => x.Name)) {
+					<ContextMenuTrigger MenuId="GoalTemplateContextMenu" Data="@item">
+						<div class="row goals-table-item item align-items-baseline">
+							<FluentLabel Class="col-8 item-text">@item.Name</FluentLabel>
+							<div class="col-4 d-flex justify-content-end align-bottom">
+								<div class="btn-toolbar" role="toolbar">
+									<div class="btn-group" role="group">
+										<button class="btn btn-secondary" @onclick="() => PushToActive(item)" @onclick:stopPropagation="true"><i class="bi bi-activity"></i></button>
+										<button class="btn btn-success" @onclick="() => ActivateGoal(item)" @onclick:stopPropagation="true"><i class="bi bi-play-fill"></i></button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</ContextMenuTrigger>
+				}
+			</div>
 		</div>
 	</div>
 </div>
@@ -100,7 +120,7 @@
 				{ "userId",  _userId }
 			});
 
-		var response = await Http.GetFromJsonAsync<List<GoalMainData>>(url);
+		var response = await Http.GetFromJsonAsync<List<GoalTemplateListData>>(url);
 		if (response is null) {
 			_goals.Clear();
 			return;
@@ -144,12 +164,12 @@
 
 	#region Subscriptions
 
-	private async Task OnGoalTemplateCreated(string userId, int templateId, GoalMainData data) {
-		if (data.User?.Id != _userId) return;
+	private async Task OnGoalTemplateCreated(GoalTemplateCreationEventArgs eventArgs) {
+		if (eventArgs.User?.Id != _userId) return;
 
-		GoalTemplateVM? template = _goals.Find(x => x.Id == templateId);
+		GoalTemplateVM? template = _goals.Find(x => x.Id == eventArgs.TemplateId);
 		if (template is not null) return;
-		template = new(data);
+		template = new(eventArgs);
 		_goals.Insert(0, template);
 
 		await InvokeAsync(StateHasChanged);

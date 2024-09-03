@@ -20,6 +20,7 @@
 		<div>
 			<FluentTextField Name="Name" @bind-Value="EditForm.Name" Label="@Loc.NameInputLabel" Style="width: 40rem" Required />
 		</div>
+		
 		<div class="mb-3">
 			<label>
 				@Loc.ContractorInputLabel
@@ -48,6 +49,7 @@
 
 			</div>
 		}
+		
 		<InputTextArea class="form-control" @bind-Value="EditForm.Comment" style="height:40vh;" DisplayName="Comment" />
 	</FluentStack>
 </EditForm>
@@ -63,8 +65,6 @@
 	public ActiveGoalEditForm EditForm { get; set; } = new();
 
 	public HashSet<Contractor> SelectedContractors { get; set; } = [];
-
-	private IEnumerable<Contractor>? SelectedOptions;
 
 	protected override async Task OnInitializedAsync() {
 		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();

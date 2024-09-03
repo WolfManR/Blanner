@@ -8,21 +8,27 @@ public class GoalTemplateVM() {
 	public int Id { get; private set; }
 	public string Name { get; set; } = string.Empty;
 	public string Comment { get; set; } = string.Empty;
-	public Contractor? Contractor { get; set; }
+	public List<Contractor> Contractors { get; set; } = [];
 	// ToDo
 
 	public bool IsOnEdit { get; set; }
 
-	public GoalTemplateVM(GoalMainData data) : this() {
+	public GoalTemplateVM(GoalTemplateListData data) : this() {
 		Id = data.Id;
 		Name = data.Name;
 		Comment = data.Comment;
-		Contractor = data.Contractor;
+		Contractors = data.Contractors;
+	}
+
+	public GoalTemplateVM(GoalTemplateCreationEventArgs data) : this() {
+		Id = data.TemplateId;
+		Name = data.Name;
+		Comment = data.Comment;
 	}
 
 	public void Set(GoalTemplateHeaderData data) {
 		Name = data.Name;
 		Comment = data.Comment;
-		Contractor = data.Contractor;
+		Contractors = data.Contractors;
 	}
 }

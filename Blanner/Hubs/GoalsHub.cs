@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Blanner.Hubs;
 public interface IGoalsClient {
-	Task GoalTemplateCreated(string userId, int goalId, GoalMainData data);
+	Task GoalTemplateCreated(GoalTemplateCreationEventArgs eventArgs);
 	Task GoalTemplateHeaderEdited(string userId, int goalId, GoalTemplateHeaderData headerData);
 	Task GoalTemplateDeleted(string userId, int goalId);
 	
@@ -24,7 +24,7 @@ public interface IGoalsClient {
 	Task JobsBuilded(string userId);
 }
 
-public delegate Task GoalTemplateCreated(string userId, int goalId, GoalMainData data);
+public delegate Task GoalTemplateCreated(GoalTemplateCreationEventArgs data);
 public delegate Task GoalTemplateHeaderEdited(string userId, int goalId, GoalTemplateHeaderData headerData);
 public delegate Task GoalTemplateDeleted(string userId, int goalId);
 
@@ -47,5 +47,6 @@ public class GoalsHub : Hub<IGoalsClient> {
 }
 
 public record ActiveGoalHeaderData(string Name, string Comment, Contractor? Contractor);
-public record GoalTemplateHeaderData(string Name, string Comment, Contractor? Contractor);
+public record GoalTemplateCreationEventArgs(int TemplateId, string Name, string Comment, UserInfoData? User);
+public record GoalTemplateHeaderData(string Name, string Comment, UserInfoData? User, List<Contractor> Contractors);
 public record struct TimeEditData(DateTimeOffset Start, DateTimeOffset End, TimeSpan Time);

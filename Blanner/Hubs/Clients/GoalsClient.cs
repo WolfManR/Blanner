@@ -8,7 +8,7 @@ namespace Blanner.Hubs.Clients;
 
 public sealed class GoalsClient : HubClientBase, IGoalsClient {
 	public GoalsClient(NavigationManager navigationManager) : base(navigationManager.GoalsHubUri()) {
-		Hub.On<string, int, GoalMainData>(nameof(IGoalsClient.GoalTemplateCreated), GoalTemplateCreated);
+		Hub.On<GoalTemplateCreationEventArgs>(nameof(IGoalsClient.GoalTemplateCreated), GoalTemplateCreated);
 		Hub.On<string, int, GoalTemplateHeaderData>(nameof(IGoalsClient.GoalTemplateHeaderEdited), GoalTemplateHeaderEdited);
 		Hub.On<string, int>(nameof(IGoalsClient.GoalTemplateDeleted), GoalTemplateDeleted);
 		
@@ -45,9 +45,9 @@ public sealed class GoalsClient : HubClientBase, IGoalsClient {
 	
 	public event JobsBuilded? OnJobsBuilded;
 
-	public async Task GoalTemplateCreated(string userId, int goalId, GoalMainData data) {
+	public async Task GoalTemplateCreated(GoalTemplateCreationEventArgs eventArgs) {
 		if (OnGoalTemplateCreated is not null)
-			await OnGoalTemplateCreated.Invoke(userId, goalId, data);
+			await OnGoalTemplateCreated.Invoke(eventArgs);
 	}
 
 	public async Task GoalTemplateHeaderEdited(string userId, int goalId, GoalTemplateHeaderData headerData) {

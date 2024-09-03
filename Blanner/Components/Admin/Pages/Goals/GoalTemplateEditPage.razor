@@ -4,6 +4,7 @@
 @inject HttpClient Http
 @inject UserManager<User> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILocalization Loc
 
 <EditForm FormName="AdminGoalTemplateEditForm" Model="this">
 	<DataAnnotationsValidator />
@@ -15,17 +16,35 @@
 		<div>
 			<FluentTextField Name="Name" @bind-Value="Name" Label="Name" Style="width: 40rem" Required />
 		</div>
-			<div class="mb-3">
-				<label>
-					Contractor
-				<InputSelect class="form-select" @bind-Value="Contractor" DisplayName="Contractor">
-					<option value="0">Empty</option>
+		
+		<div class="mb-3">
+			<label>
+				@Loc.ContractorInputLabel
+				<InputSelect class="form-select" @bind-Value="SelectedContractorId" DisplayName="Contractor">
+					<option value="0">@Loc.OptionEmpty</option>
 					@foreach (var item in _contractors) {
 						<option value="@item.Id">@item.Name</option>
 					}
 				</InputSelect>
-				</label>
+			</label>
+
+			<FluentButton IconStart="@(new Icons.Regular.Size32.AddSquare())" @onclick="AddContractor"></FluentButton>
+		</div>
+		@if (Contractors.Count > 0) {
+
+			<div style="width:95%">
+
+				<FluentHorizontalScroll Speed="600" Easing=ScrollEasing.EaseInOut>
+					@foreach (var selectedContractor in Contractors) {
+						<FluentCard MinimalStyle="true" Class="p-2 d-flex flex-row flex-nowrap align-items-center justify-content-between">
+							<div>@selectedContractor.Name</div>
+							<FluentButton Class="ms-2" IconStart="@(new Icons.Regular.Size20.Dismiss())" OnClick="() => Contractors.Remove(selectedContractor)"></FluentButton>
+						</FluentCard>
+					}
+				</FluentHorizontalScroll>
+
 			</div>
+		}
 
 		<div class="mb-3">
 			<label>
@@ -52,15 +71,16 @@
 	private List<UserSelectListData> _users = [];
 	private string _userId = "";
 
-
 	[Parameter]
 	public int Id { get; set; }
 
 	public string Name { get; set; } = string.Empty;
 	public string Comment { get; set; } = string.Empty;
-	public int? Contractor { get; set; }
+	public HashSet<Contractor> Contractors { get; set; } = [];
 	public string? User { get; set; }
-	public int? ActiveGoalId { get; set; }
+
+	[SupplyParameterFromForm]
+	public int? SelectedContractorId { get; set; }
 
 	protected override async Task OnInitializedAsync() {
 		var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -78,13 +98,22 @@
 		if (Id == 0) return;
 		var url = NavManager.ToAbsoluteUri($"api/goals/templates/{Id}").AbsoluteUri;
 
-		var entity = await Http.GetFromJsonAsync<GoalMainData>(url);
+		var entity = await Http.GetFromJsonAsync<GoalTemplateDetailsData>(url);
 		if (entity is null) return;
 		Name = entity.Name;
 		Comment = entity.Comment;
-		Contractor = entity.Contractor?.Id;
+		Contractors = entity.Contractors.ToHashSet();
 		User = entity.User?.Id;
+
+		if (Contractors.Count == 1) SelectedContractorId = Contractors.Select(x => x.Id).First();
+
 		StateHasChanged();
+	}
+
+	private void AddContractor() {
+		if (!SelectedContractorId.HasValue) return;
+		if (_contractors.Find(x => x.Id == SelectedContractorId) is not { } selected) return;
+		Contractors.Add(selected);
 	}
 
 	private async Task Save() {
@@ -93,15 +122,18 @@
 		object request;
 		string uri;
 
+		HashSet<int> contractorsIds = Contractors.Select(x => x.Id).ToHashSet();
+		if (SelectedContractorId.HasValue) contractorsIds.Add(SelectedContractorId.Value);
+		int[] contractors = contractorsIds.Order().ToArray();
+
 		if(Id == 0) {
-			request = new GoalTemplateCreationData(_userId, Name, Comment, Contractor);
+			request = new GoalTemplateCreationData(_userId, Name, Comment, contractors);
 
 			uri = "api/goals/templates/save";
 		}
 		else {
 			if (User is null) return;
-			int? contractorId = Contractor; 
-			request = new GoalTemplateHeaderDataChanges(User, Id, Name, Comment, contractorId);
+			request = new GoalTemplateHeaderDataChanges(User, Id, Name, Comment, contractors);
 
 			uri = "api/goals/templates/save/header";
 		}
