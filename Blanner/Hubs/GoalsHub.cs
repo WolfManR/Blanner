@@ -14,12 +14,12 @@ public interface IGoalsClient {
 	Task GoalHeaderEdited(string userId, int goalId, ActiveGoalHeaderData headerData);
 	Task GoalDeleted(string userId, int goalId);
 	
-	Task TimerEdited(string userId, int goalId, int timerId, TimerEditData data);
-	Task TimerStopped(string userId, int goalId, TimeSpan goalTimeTotal);
+	Task TimeEdited(string userId, int goalId, int timeId, TimeEditData data);
+	Task TimeStopped(string userId, int goalId, TimeSpan goalTimeTotal);
 
-	Task GoalTimerCreated(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan goalTimeTotal);
-	Task GoalTimerEdited(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan goalTimeTotal);
-	Task GoalTimerDeleted(string userId, int goalId, int timerId, TimeSpan goalTimeTotal);
+	Task GoalTimeCreated(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan goalTimeTotal);
+	Task GoalTimeEdited(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan goalTimeTotal);
+	Task GoalTimeDeleted(string userId, int goalId, int timeId, TimeSpan goalTimeTotal);
 
 	Task JobsBuilded(string userId);
 }
@@ -33,12 +33,12 @@ public delegate Task GoalCreated(string userId, int goalId, ActiveGoalListData d
 public delegate Task GoalHeaderEdited(string userId, int goalId, ActiveGoalHeaderData headerData);
 public delegate Task GoalDeleted(string userId, int goalId);
 
-public delegate Task TimerEdited(string userId, int goalId, int timerId, TimerEditData data);
-public delegate Task TimerStopped(string userId, int goalId, TimeSpan goalTimeTotal);
+public delegate Task TimeEdited(string userId, int goalId, int timeId, TimeEditData data);
+public delegate Task TimeStopped(string userId, int goalId, TimeSpan goalTimeTotal);
 
-public delegate Task GoalTimerCreated(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan goalTimeTotal);
-public delegate Task GoalTimerEdited(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan goalTimeTotal);
-public delegate Task GoalTimerDeleted(string userId, int goalId, int timerId, TimeSpan goalTimeTotal);
+public delegate Task GoalTimeCreated(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan goalTimeTotal);
+public delegate Task GoalTimeEdited(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan goalTimeTotal);
+public delegate Task GoalTimeDeleted(string userId, int goalId, int timeId, TimeSpan goalTimeTotal);
 
 public delegate Task JobsBuilded(string userId);
 
@@ -48,4 +48,4 @@ public class GoalsHub : Hub<IGoalsClient> {
 
 public record ActiveGoalHeaderData(string Name, string Comment, Contractor? Contractor);
 public record GoalTemplateHeaderData(string Name, string Comment, Contractor? Contractor);
-public record struct TimerEditData(DateTimeOffset Start, DateTimeOffset End, TimeSpan Time);
+public record struct TimeEditData(DateTimeOffset Start, DateTimeOffset End, TimeSpan Time);

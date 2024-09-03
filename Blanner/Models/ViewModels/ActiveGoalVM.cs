@@ -26,8 +26,8 @@ public class ActiveGoalVM() {
 		Contractor = data.Contractor;
 		TotalElapsedTime = data.TotalElapsedTime;
 		ActivationTime = data.ActivationTime;
-		ActiveTimerId = data.ActiveTimerId;
-		Tick = data.ActiveTimerId is not null;
+		ActiveTimerId = data.ActiveTimeId;
+		Tick = data.ActiveTimeId is not null;
 		TimerTime = Tick ? DateTimeOffset.Now - ActivationTime : TimeSpan.Zero;
 	}
 
@@ -36,16 +36,12 @@ public class ActiveGoalVM() {
 		Comment = data.Comment;
 		Contractor = data.Contractor;
 	}
-	public void Set(GoalTemplateHeaderData data) {
-		Name = data.Name;
-		Contractor = data.Contractor;
-	}
 
 	public void SetActiveData(ActiveGoalListData data) {
 		TotalElapsedTime = data.TotalElapsedTime;
 		ActivationTime = data.ActivationTime;
-		ActiveTimerId = data.ActiveTimerId;
-		Tick = data.ActiveTimerId is not null;
+		ActiveTimerId = data.ActiveTimeId;
+		Tick = data.ActiveTimeId is not null;
 		TimerTime = Tick ? DateTimeOffset.Now - ActivationTime : TimeSpan.Zero;
 	}
 

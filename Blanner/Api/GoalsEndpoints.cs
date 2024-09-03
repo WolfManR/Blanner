@@ -179,7 +179,7 @@ public static class GoalsEndpointsBehaviors {
 		[FromServices] IHubContext<GoalsHub, IGoalsClient> goalsHubContext) 
 	{
 		var goalTotalTime = await activeGoalsRepository.StopTimer(request.GoalId, request.DeactivationDate);
-		await goalsHubContext.Clients.All.TimerStopped(request.UserId, request.GoalId, goalTotalTime);
+		await goalsHubContext.Clients.All.TimeStopped(request.UserId, request.GoalId, goalTotalTime);
 		return TypedResults.Ok();
 	}
 
@@ -201,7 +201,7 @@ public static class GoalsEndpointsBehaviors {
 	{
 		(ActiveGoalTime GoalTime, TimeSpan GoalTotalTime)? result = await goalsRepository.CreateTimer(request);
 		if (result is null) return TypedResults.Problem();
-		await hubContext.Clients.All.GoalTimerCreated(request.UserId, request.GoalId, new(result.Value.GoalTime), result.Value.GoalTotalTime);
+		await hubContext.Clients.All.GoalTimeCreated(request.UserId, request.GoalId, new(result.Value.GoalTime), result.Value.GoalTotalTime);
 		return TypedResults.Ok();
 	}
 	
@@ -212,7 +212,7 @@ public static class GoalsEndpointsBehaviors {
 	{
 		(ActiveGoalTime GoalTime, TimeSpan GoalTotalTime)? result = await goalsRepository.EditTimer(request);
 		if (result is null) return TypedResults.Problem();
-		await hubContext.Clients.All.GoalTimerEdited(request.UserId, request.GoalId, new(result.Value.GoalTime), result.Value.GoalTotalTime);
+		await hubContext.Clients.All.GoalTimeEdited(request.UserId, request.GoalId, new(result.Value.GoalTime), result.Value.GoalTotalTime);
 		return TypedResults.Ok();
 	}
 
@@ -223,7 +223,7 @@ public static class GoalsEndpointsBehaviors {
 	{
 		ActiveGoalTime? goalTIme = await goalsRepository.DeleteTimer(request.TimeId);
 		if (goalTIme is null) return TypedResults.NotFound();
-		await hubContext.Clients.All.GoalTimerDeleted(request.UserId, request.GoalId, request.TimeId, await goalsRepository.TotalTime(request.GoalId));
+		await hubContext.Clients.All.GoalTimeDeleted(request.UserId, request.GoalId, request.TimeId, await goalsRepository.TotalTime(request.GoalId));
 		return TypedResults.Ok();
 	}
 
@@ -237,7 +237,7 @@ public static class GoalsEndpointsBehaviors {
 		
 		await Parallel.ForEachAsync(goals, async (goal, token) =>
 		{
-			await hubContext.Clients.All.TimerStopped(request.UserId, goal.Id, goal.TotalTime());
+			await hubContext.Clients.All.TimeStopped(request.UserId, goal.Id, goal.TotalTime());
 		});
 		return TypedResults.Ok();
 	}

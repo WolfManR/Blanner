@@ -195,7 +195,7 @@ public class GoalsRepository(ApplicationDbContext dbContext) {
 		ActiveGoalTime goalTime = await _dbContext.ActiveGoalsTime
 		.Include(x => x.ActiveGoal).ThenInclude(x => x.GoalTime)
 		.Where(x => x.ActiveGoal.Id == data.GoalId)
-		.FirstAsync(x => x.Id == data.TimerId);
+		.FirstAsync(x => x.Id == data.TimeId);
 
 		goalTime.Start = StartTime;
 		goalTime.End = EndTime;

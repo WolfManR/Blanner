@@ -80,11 +80,11 @@
         GoalsClient.OnGoalHeaderEdited += OnGoalHeaderEdited;
         GoalsClient.OnGoalDeleted += OnGoalDeleted;
 
-        GoalsClient.OnTimerStopped += OnTimerStopped;
+        GoalsClient.OnTimeStopped += OnTimerStopped;
 
-        GoalsClient.OnGoalTimerCreated += OnGoalTimerCreated;
-        GoalsClient.OnGoalTimerEdited += OnGoalTimerEdited;
-        GoalsClient.OnGoalTimerDeleted += OnGoalTimerDeleted;
+        GoalsClient.OnGoalTimeCreated += OnGoalTimeCreated;
+        GoalsClient.OnGoalTimeEdited += OnGoalTimeEdited;
+        GoalsClient.OnGoalTimeDeleted += OnGoalTimeDeleted;
 
         GoalsClient.OnJobsBuilded += OnJobsBuilded;
 
@@ -211,7 +211,7 @@
     }
 
 
-    private async Task OnGoalTimerCreated(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan _) {
+    private async Task OnGoalTimeCreated(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan _) {
         if (EditForm.Id != goalId) return;
 
         ActiveGoalTimeData? goalTime = EditForm.GoalTime.Find(x => x.Id == timerData.Id);
@@ -223,7 +223,7 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnGoalTimerEdited(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan _) {
+    private async Task OnGoalTimeEdited(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan _) {
         if (EditForm.Id != goalId) return;
 
         ActiveGoalTimeData? goalTime = EditForm.GoalTime.Find(x => x.Id == timerData.Id);
@@ -237,10 +237,10 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnGoalTimerDeleted(string userId, int goalId, int timerId, TimeSpan goalTotalTime) {
+    private async Task OnGoalTimeDeleted(string userId, int goalId, int timeId, TimeSpan goalTotalTime) {
         if (EditForm.Id != goalId) return;
 
-        ActiveGoalTimeData? goalTime = EditForm.GoalTime.Find(x => x.Id == timerId);
+        ActiveGoalTimeData? goalTime = EditForm.GoalTime.Find(x => x.Id == timeId);
         if (goalTime is null) return;
 
         EditForm.GoalTime.Remove(goalTime);

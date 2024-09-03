@@ -17,12 +17,12 @@ public sealed class GoalsClient : HubClientBase, IGoalsClient {
 		Hub.On<string, int, ActiveGoalHeaderData>(nameof(IGoalsClient.GoalHeaderEdited), GoalHeaderEdited);
 		Hub.On<string, int>(nameof(IGoalsClient.GoalDeleted), GoalDeleted);
 		
-		Hub.On<string, int, int, TimerEditData>(nameof(IGoalsClient.TimerEdited), TimerEdited);
-		Hub.On<string, int, TimeSpan>(nameof(IGoalsClient.TimerStopped), TimerStopped);
+		Hub.On<string, int, int, TimeEditData>(nameof(IGoalsClient.TimeEdited), TimeEdited);
+		Hub.On<string, int, TimeSpan>(nameof(IGoalsClient.TimeStopped), TimeStopped);
 		
-		Hub.On<string, int, ActiveGoalTimeData, TimeSpan>(nameof(IGoalsClient.GoalTimerCreated), GoalTimerCreated);
-		Hub.On<string, int, ActiveGoalTimeData, TimeSpan>(nameof(IGoalsClient.GoalTimerEdited), GoalTimerEdited);
-		Hub.On<string, int, int, TimeSpan>(nameof(IGoalsClient.GoalTimerDeleted), GoalTimerDeleted);
+		Hub.On<string, int, ActiveGoalTimeData, TimeSpan>(nameof(IGoalsClient.GoalTimeCreated), GoalTimeCreated);
+		Hub.On<string, int, ActiveGoalTimeData, TimeSpan>(nameof(IGoalsClient.GoalTimeEdited), GoalTimeEdited);
+		Hub.On<string, int, int, TimeSpan>(nameof(IGoalsClient.GoalTimeDeleted), GoalTimeDeleted);
 
 		Hub.On<string>(nameof(IGoalsClient.JobsBuilded), JobsBuilded);
 	}
@@ -36,12 +36,12 @@ public sealed class GoalsClient : HubClientBase, IGoalsClient {
 	public event GoalHeaderEdited? OnGoalHeaderEdited;
 	public event GoalDeleted? OnGoalDeleted;
    
-	public event TimerEdited? OnTimerEdited;
-	public event TimerStopped? OnTimerStopped;
+	public event TimeEdited? OnTimeEdited;
+	public event TimeStopped? OnTimeStopped;
 	
-	public event GoalTimerCreated? OnGoalTimerCreated;
-	public event GoalTimerEdited? OnGoalTimerEdited;
-	public event GoalTimerDeleted? OnGoalTimerDeleted;
+	public event GoalTimeCreated? OnGoalTimeCreated;
+	public event GoalTimeEdited? OnGoalTimeEdited;
+	public event GoalTimeDeleted? OnGoalTimeDeleted;
 	
 	public event JobsBuilded? OnJobsBuilded;
 
@@ -82,30 +82,30 @@ public sealed class GoalsClient : HubClientBase, IGoalsClient {
 	}
 
 
-	public async Task TimerEdited(string userId, int goalId, int timerId, TimerEditData data) {
-		if (OnTimerEdited is not null)
-			await OnTimerEdited.Invoke(userId, goalId, timerId, data);
+	public async Task TimeEdited(string userId, int goalId, int timeId, TimeEditData data) {
+		if (OnTimeEdited is not null)
+			await OnTimeEdited.Invoke(userId, goalId, timeId, data);
 	}
 
-	public async Task TimerStopped(string userId, int goalId, TimeSpan goalTimeTotal) {
-		if (OnTimerStopped is not null)
-			await OnTimerStopped.Invoke(userId, goalId, goalTimeTotal);
+	public async Task TimeStopped(string userId, int goalId, TimeSpan goalTimeTotal) {
+		if (OnTimeStopped is not null)
+			await OnTimeStopped.Invoke(userId, goalId, goalTimeTotal);
 	}
 
 
-	public async Task GoalTimerCreated(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan goalTimeTotal) {
-		if (OnGoalTimerCreated is not null)
-			await OnGoalTimerCreated.Invoke(userId, goalId, timerData, goalTimeTotal);
+	public async Task GoalTimeCreated(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan goalTimeTotal) {
+		if (OnGoalTimeCreated is not null)
+			await OnGoalTimeCreated.Invoke(userId, goalId, timerData, goalTimeTotal);
 	}
 
-	public async Task GoalTimerEdited(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan goalTimeTotal) {
-		if (OnGoalTimerEdited is not null)
-			await OnGoalTimerEdited.Invoke(userId, goalId, timerData, goalTimeTotal);
+	public async Task GoalTimeEdited(string userId, int goalId, ActiveGoalTimeData timerData, TimeSpan goalTimeTotal) {
+		if (OnGoalTimeEdited is not null)
+			await OnGoalTimeEdited.Invoke(userId, goalId, timerData, goalTimeTotal);
 	}
 
-	public async Task GoalTimerDeleted(string userId, int goalId, int timerId, TimeSpan goalTimeTotal) {
-		if (OnGoalTimerDeleted is not null)
-			await OnGoalTimerDeleted.Invoke(userId, goalId, timerId, goalTimeTotal);
+	public async Task GoalTimeDeleted(string userId, int goalId, int timeId, TimeSpan goalTimeTotal) {
+		if (OnGoalTimeDeleted is not null)
+			await OnGoalTimeDeleted.Invoke(userId, goalId, timeId, goalTimeTotal);
 	}
 
 

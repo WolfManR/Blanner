@@ -16,7 +16,7 @@ public sealed record GoalActivationData(string UserId, int GoalId, DateTimeOffse
 public sealed record GoalDeactivationData(string UserId, int GoalId,  DateTimeOffset DeactivationDate);
 
 public sealed record GoalTimeCreationData(int GoalId, string UserId, DateTimeOffset Start, DateTimeOffset? End, TimeSpan? Time);
-public sealed record GoalTimeEditData(int GoalId, int TimerId, string UserId, DateTimeOffset Start, DateTimeOffset? End, TimeSpan? Time);
+public sealed record GoalTimeEditData(int GoalId, int TimeId, string UserId, DateTimeOffset Start, DateTimeOffset? End, TimeSpan? Time);
 public sealed record GoalTimeDeleteData(int GoalId, int TimeId, string UserId);
 
 public sealed record CompleteJobData(string UserId, DateTimeOffset CompleteDate);

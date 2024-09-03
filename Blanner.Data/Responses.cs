@@ -38,14 +38,14 @@ public class ActiveGoalListData : GoalMainData {
 
 		TotalElapsedTime = data.TotalTime();
 		ActivationTime = data.CurrentlyActiveTime == null ? DateTimeOffset.MinValue : data.GoalTime.Find(c => c.Id == data.CurrentlyActiveTime)!.Start;
-		ActiveTimerId = data.CurrentlyActiveTime;
+		ActiveTimeId = data.CurrentlyActiveTime;
 
 		Tasks = data.Tasks;
 	}
 
 	public TimeSpan TotalElapsedTime { get; set; }
 	public DateTimeOffset ActivationTime { get; set; }
-	public int? ActiveTimerId { get; set; }
+	public int? ActiveTimeId { get; set; }
 	public List<ToDo> Tasks { get; set; } = [];
 }
 public class ActiveGoalDetailsData : GoalMainData {
@@ -60,13 +60,13 @@ public class ActiveGoalDetailsData : GoalMainData {
 		User = data.User is null ? null : new(data.User);
 
 		GoalTime = data.GoalTime.Select(x => new ActiveGoalTimeData(x)).ToList();
-		ActiveTimerId = data.CurrentlyActiveTime;
+		ActiveTimeId = data.CurrentlyActiveTime;
 
 		Tasks = data.Tasks;
 	}
 
 	public List<ActiveGoalTimeData> GoalTime { get; set; } = [];
-	public int? ActiveTimerId { get; set; }
+	public int? ActiveTimeId { get; set; }
 
 	public List<ToDo> Tasks { get; set; } = [];
 }
