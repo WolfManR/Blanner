@@ -17,7 +17,7 @@ public class JobContext
     public List<JobTime> Time { get; set; } = [];
     public List<JobChanges> Changes { get; set; } = [];
     
-    public string UserId { get; set; } = null!;
+    public string? UserId { get; set; } = null!;
     public int? ContractorId { get; set; } = null!;
 
     public User? User { get; set; }

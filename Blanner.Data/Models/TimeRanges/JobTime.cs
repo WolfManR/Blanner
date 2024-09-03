@@ -6,7 +6,7 @@ public class JobTime : TimeRange, ITime {
     public long Id { get; set; }
 
     public string? UserId { get; set; }
-    public int? ContextId { get; set; }
+    public int ContextId { get; set; }
     public int? JobChangeId { get; set; }
 
     public User? User { get; set; }
