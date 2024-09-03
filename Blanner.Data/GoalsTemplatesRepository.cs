@@ -7,24 +7,70 @@ public class GoalsTemplatesRepository(ApplicationDbContext dbContext) {
 	private readonly ApplicationDbContext _dbContext = dbContext;
 
 	public IQueryable<GoalTemplate> Templates(string userId) {
-		var query = _dbContext.GoalsTemplates.AsNoTracking().Include(x => x.Contractor).AsQueryable();
+		var query = _dbContext.GoalsTemplates.AsNoTracking().Include(x=>x.Contractor).Include(x => x.Contractors).AsQueryable();
 		query = query.Include(x => x.User).Where(x => x.User != null && x.User.Id == userId);
 		return query;
 	}
 
 	public Task<GoalTemplate> Template(int templateId) {
-		return _dbContext.GoalsTemplates.AsNoTracking().Include(x => x.User).Include(x => x.Contractor).FirstAsync(x => x.Id == templateId);
+		return _dbContext.GoalsTemplates.AsNoTracking().Include(x => x.User).Include(x => x.Contractors).FirstAsync(x => x.Id == templateId);
 	}
 
-	public async ValueTask<GoalTemplate?> Save(string userId, string name, string comment, int? contractorId) {
+	public async ValueTask<GoalTemplate?> Create(string userId, string text) {
+		User? user = await _dbContext.Users.FindAsync(userId);
+		if (user is null) return null;
+
+		GoalTemplate template = new(text.NullOrEmpty() ? "Noname" : text.Cut(100), user) {
+			Comment = text
+		};
+
+		_dbContext.GoalsTemplates.Add(template);
+		await _dbContext.SaveChangesAsync();
+
+		return template;
+	}
+
+	public async ValueTask<GoalTemplate?> AssignContractors(long templateId, int[] contractorsId) {
+		GoalTemplate? template = await _dbContext.GoalsTemplates.Include(x => x.User).Include(x => x.Contractors).FirstOrDefaultAsync(x => x.Id == templateId);
+		if (template is null) return null;
+
+		var contractorsToDelete = (from existed in template.Contractors
+								   join id in contractorsId on existed.Id equals id into temp
+								   from id in temp.DefaultIfEmpty()
+								   where id == default
+								   select existed).ToHashSet();
+
+		template.Contractors.RemoveAll(contractorsToDelete.Contains);
+
+		var contractorsToAdd = from id in contractorsId
+							   join existed in template.Contractors.Select(x => x.Id) on id equals existed into temp
+							   from existed in temp.DefaultIfEmpty()
+							   where existed == default
+							   select id;
+
+		foreach (var toAdd in contractorsToAdd) {
+			Contractor? contractor = await _dbContext.Contractors.FindAsync(toAdd);
+			if (contractor is not null)
+				template.Contractors.Add(contractor);
+		}
+
+		await _dbContext.SaveChangesAsync();
+
+		return template;
+	}
+
+	public async ValueTask<GoalTemplate?> Save(string userId, string name, string comment, int[] contractorId) {
 		User? user = await _dbContext.Users.FindAsync(userId);
 		if (user is null) return null;
 
 		GoalTemplate template = new(name, user)
 		{
-			Comment = comment,
-			ContractorId = contractorId
+			Comment = comment
 		};
+
+		//if(contractorId > 0 && await _dbContext.Contractors.FindAsync(contractorId) is { } contractor) {
+		//	template.Contractors.Add(contractor);
+		//}
 
 		_dbContext.GoalsTemplates.Add(template);
 		await _dbContext.SaveChangesAsync();
@@ -32,25 +78,33 @@ public class GoalsTemplatesRepository(ApplicationDbContext dbContext) {
 		return template;
 	}
 
-	public async Task<GoalTemplate> Update(int templateId, string name, string Comment, int? contractorId) {
+	public async Task<GoalTemplate> Update(int templateId, string name, string Comment, int[] contractorsId) {
 		GoalTemplate template = await _dbContext.GoalsTemplates
-			.Include(x => x.Contractor)
+			.Include(x => x.Contractors)
 			.FirstAsync(x => x.Id == templateId);
 
 		template.Name = name;
 		template.Comment = Comment;
-		
-		switch (template.Contractor is null, contractorId is null) {
-			case (false, true):
-				template.Contractor = null;
-				break;
-			case (_, false) when (template.Contractor?.Id != contractorId):
-				Contractor? contractor = await _dbContext.Contractors.FindAsync(contractorId);
-				if (contractor is null) break;
-				template.Contractor = contractor;
-				break;
-			default:
-				break;
+
+		var contractorsToDelete = (from existed in template.Contractors
+								   join id in contractorsId on existed.Id equals id into temp
+								   from id in temp.DefaultIfEmpty()
+								   where id == default
+								   select existed).ToHashSet();
+
+		template.Contractors.RemoveAll(contractorsToDelete.Contains);
+
+		var contractorsToAdd = from id in contractorsId
+							   join existed in template.Contractors.Select(x=>x.Id) on id equals existed into temp
+							   from existed in temp.DefaultIfEmpty()
+							   where existed == default
+							   select id;
+
+        foreach (var toAdd in contractorsToAdd)
+        {
+			Contractor? contractor = await _dbContext.Contractors.FindAsync(toAdd);
+			if (contractor is not null)
+				template.Contractors.Add(contractor);
 		}
 
 		await _dbContext.SaveChangesAsync();
@@ -71,7 +125,7 @@ public class GoalsTemplatesRepository(ApplicationDbContext dbContext) {
 
 	public async Task<Goal> Activate(int templateId, DateTimeOffset activateDate) {
 		GoalTemplate? template = await _dbContext.GoalsTemplates
-			.Include(x => x.Contractor)
+			.Include(x => x.Contractors)
 			.Include(x => x.User)
 			.FirstOrDefaultAsync(x => x.Id == templateId) ?? throw new InvalidOperationException("Template not exist");
         Goal goal = new(template, activateDate);

@@ -22,7 +22,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         builder.Entity<GoalTemplate>(e => {
             e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Contractor).WithMany().HasForeignKey(x => x.ContractorId).OnDelete(DeleteBehavior.SetNull);
+			e.HasOne(x => x.Contractor).WithMany().HasForeignKey(x => x.ContractorId).OnDelete(DeleteBehavior.SetNull);
+			e.HasMany(x => x.Contractors).WithMany();
 		});
 
         builder.Entity<Goal>(e => {
@@ -42,9 +43,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
 
         builder.Entity<Contractor>(e => {
-            e.HasMany<GoalTemplate>().WithOne(x => x.Contractor).OnDelete(DeleteBehavior.SetNull);
-            e.HasMany<Goal>().WithOne(x => x.Contractor).OnDelete(DeleteBehavior.SetNull);
-            e.HasMany<JobContext>().WithOne(x => x.Contractor).OnDelete(DeleteBehavior.SetNull);
         });
 
         builder.Entity<JobContext>(e => {
