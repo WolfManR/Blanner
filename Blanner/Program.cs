@@ -9,6 +9,7 @@ using Blanner.Hubs.Clients;
 using Blanner.Localizations;
 using Blanner.Models;
 using Blanner.Services;
+using Blanner.Tools;
 
 using Coravel;
 using Coravel.Events.Interfaces;
