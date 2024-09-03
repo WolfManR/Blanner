@@ -21,7 +21,7 @@ public class Goal() : BaseModel
 
     public List<ToDo> Tasks { get; set; } = [];
     public List<ActiveGoalTime> GoalTime { get; set; } = [];
-    public long? CurrentlyActiveTime { get; set; }
+    public int? CurrentlyActiveTime { get; set; }
 
     public string UserId { get; set; } = null!;
 	public int? ContractorId { get; set; }
