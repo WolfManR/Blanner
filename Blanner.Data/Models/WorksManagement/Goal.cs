@@ -22,11 +22,13 @@ public class Goal() : BaseModel
     public List<ToDo> Tasks { get; set; } = [];
     public List<ActiveGoalTime> GoalTime { get; set; } = [];
     public int? CurrentlyActiveTime { get; set; }
+    public int? GoalGroupId { get; set; }
 
     public string UserId { get; set; } = null!;
 	public int? ContractorId { get; set; }
 	public User? User { get; set; }
     public Contractor? Contractor { get; set; }
+    public GoalsGroup? Group { get; set; }
 
     public TimeSpan TotalTime()
     {

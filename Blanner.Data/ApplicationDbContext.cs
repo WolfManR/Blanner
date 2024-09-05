@@ -10,6 +10,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 {
     public virtual DbSet<GoalTemplate> GoalsTemplates { get; set; } = null!;
     public virtual DbSet<Goal> Goals { get; set; } = null!;
+    public virtual DbSet<GoalsGroup> GoalsGroups { get; set; } = null!;
     public virtual DbSet<ActiveGoalTime> ActiveGoalsTime { get; set; } = null!;
     public virtual DbSet<ToDo> ToDos { get; set; } = null!;
     public virtual DbSet<Contractor> Contractors { get; set; } = null!;
@@ -31,6 +32,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             e.HasOne(x => x.Contractor).WithMany().HasForeignKey(x => x.ContractorId).OnDelete(DeleteBehavior.SetNull);
             e.HasMany(x => x.Tasks).WithOne(x => x.Goal).OnDelete(DeleteBehavior.SetNull);
             e.HasMany(x => x.GoalTime).WithOne(x => x.ActiveGoal).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.Group).WithMany(x => x.Goals).HasForeignKey(x => x.GoalGroupId).OnDelete(DeleteBehavior.SetNull);
 		});
 
         builder.Entity<ToDo>(e => {
